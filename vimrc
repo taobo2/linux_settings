@@ -10,7 +10,7 @@ colorscheme darkblue
 set tabstop=4
 set shiftwidth=4 "length for (auto)indent
 set expandtab
-set omnifunc=syntaxcomplete#Complete
+"set omnifunc=syntaxcomplete#Complete
 set backspace=2
 set hlsearch
 set incsearch
@@ -20,7 +20,16 @@ set cursorline cursorcolumn
 set wildmenu
 set history=1000
 set ls=2
-set path+=**
+"path define where command (such as find) goes to find files, ** means all sub
+"directories
+set path+=./**
+
+
+
+"curdir means save current dir in this session
+"sesdir means when open the session, set current dir to session file's dir
+set sessionoptions-=curdir
+set sessionoptions+=sesdir
 
 
 "expand('%') displays the relative path of the file being edit.
@@ -34,13 +43,13 @@ set path+=**
 " %1*in%0* means use user1 color to word "in", then switch to the default color
 "
 " ctermfg is the front color for terminal vim.
-"highlight User1 ctermfg=green
+highlight User1 ctermfg=green
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
-set statusline+=%.80F
+set statusline=%.40F
 
+set statusline+=\ %1*%.40{getcwd()}%0* "set working directory
 "l means current line number; L means max line number.
-
 set statusline+=%=Col:%c
 "set spell
 
