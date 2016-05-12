@@ -18,7 +18,7 @@ set incsearch
 "autocmd InsertLeave * set nocursorline nocursorcolumn
 set cursorline cursorcolumn
 set wildmenu
-set history=1000
+set history=10000
 set ls=2
 "path define where command (such as find) goes to find files, ** means all sub
 "directories
@@ -43,20 +43,52 @@ set sessionoptions+=sesdir
 " %1*in%0* means use user1 color to word "in", then switch to the default color
 "
 " ctermfg is the front color for terminal vim.
-highlight User1 ctermfg=green
+"highlight User1 ctermfg=green
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
-set statusline=%.40F
+let g:statuslinelength=80 
+function TruncateStr(str, len)
+    let a:strLen = strlen(a:str)
+    if a:strLen <= a:len
+        return a:str
+    endif
+    return '>' . strpart(a:str, a:strLen - a:len)
+endfunction
 
-set statusline+=\ %1*%.40{getcwd()}%0* "set working directory
+function FileStatus()
+    let a:currentfile = expand('%')
+    let a:fileNameLen = strlen(a:currentfile)
+    let a:status = TruncateStr(a:currentfile, g:statuslinelength)
+    if a:fileNameLen >= g:statuslinelength
+        return a:currentfile
+    endif
+    let a:status = a:status . " "  "concat
+    let a:workingdir = getcwd()
+    let a:leftSpaces = g:statuslinelength - a:fileNameLen
+    let a:status = a:status . TruncateStr(a:workingdir, a:leftSpaces)
+    return a:status
+endfunction
+
+"set statusline=%.40F
+
+"set statusline+=\ %1*%.40{getcwd()}%0* "set working directory
+
+set statusline=%{FileStatus()}
 "l means current line number; L means max line number.
 set statusline+=%=Col:%c
 "set spell
 
-
-set backupdir=/tmp
-"The 'directory' option controls where swap files go
-set directory=/tmp
+if strlen($TEMP) > 0 
+    set backupdir=$TEMP
+    set directory=$TEMP
+elseif strlen($TMPDIR) > 0
+    set backupdir=$TMPDIR
+    set directory=$TMPDIR
+else
+    set backupdir=/tmp
+    "The 'directory' option controls where swap files go
+    set directory=/tmp
+endif
 
 
 filetype plugin indent on
