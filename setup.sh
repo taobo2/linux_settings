@@ -1,0 +1,44 @@
+#!/bin/sh
+
+backupDir=~/.linux_settings_backup
+if [  -d $backupDir ]
+then 
+    echo -e 'It seems that the setup has been run.\n'
+    read -p 'Do you want to rerun it?(y/n)' run
+    if [ $run == 'n' ] 
+    then exit 0
+    fi
+    
+    read -p 'The previous backup files will be removed. Are you sure?(y/n)' run
+    if [ $run == 'n' ]
+    then exit 0
+    fi
+else
+    mkdir $backupDir || { echo "Fail to create backup dir $backupDir." 1>&2; exit 1 }
+fi
+
+scriptDir=$(dirname "$(readlink -f "$0")")
+
+function backup(){
+    local file=$1
+
+    if [ ! -e $file ]
+    then return
+    fi
+
+    local backup="$backupDir/"$(basename $file)
+    rm -f $backup
+    local command=$2
+    $2 $file $backup || { echo "Fail to backup $file." 1>&2; exit 1 }
+}
+
+vimrc="$HOME/.vimrc" mv
+backup $vimrc
+ln -s "$scriptDir/vimrc" ~/.vimrc
+
+bashrc="$HOME/.bashrc" cp
+backup $bashrc
+echo "====================Add by Bob Linux Setting====================" >> $bashrc
+echo "HISTFILESIZE=10000" >> $bashrc
+echo "================================================================" >> $bashrc
+
