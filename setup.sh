@@ -1,20 +1,20 @@
-#!/bin/sh
+#!/bin/bash
 
 backupDir=~/.linux_settings_backup
 if [  -d $backupDir ]
 then 
     echo -e 'It seems that the setup has been run.\n'
     read -p 'Do you want to rerun it?(y/n)' run
-    if [ $run == 'n' ] 
+    if [ $run != 'y' ] 
     then exit 0
     fi
     
-    read -p 'The previous backup files will be removed. Are you sure?(y/n)' run
-    if [ $run == 'n' ]
+    read -p 'The previous backup files will be removed. Are you sure?(Y/n)' run
+    if [ $run != 'Y' ]
     then exit 0
     fi
 else
-    mkdir $backupDir || { echo "Fail to create backup dir $backupDir." 1>&2; exit 1 }
+    mkdir $backupDir || { echo "Fail to create backup dir $backupDir." 1>&2; exit 1; }
 fi
 
 scriptDir=$(dirname "$(readlink -f "$0")")
@@ -29,15 +29,15 @@ function backup(){
     local backup="$backupDir/"$(basename $file)
     rm -f $backup
     local command=$2
-    $2 $file $backup || { echo "Fail to backup $file." 1>&2; exit 1 }
+    $2 $file $backup || { echo "Fail to backup $file." 1>&2; exit 1 ;}
 }
 
-vimrc="$HOME/.vimrc" mv
-backup $vimrc
+vimrc="$HOME/.vimrc" 
+backup $vimrc mv
 ln -s "$scriptDir/vimrc" ~/.vimrc
 
-bashrc="$HOME/.bashrc" cp
-backup $bashrc
+bashrc="$HOME/.bashrc" 
+backup $bashrc cp
 echo "====================Add by Bob Linux Setting====================" >> $bashrc
 echo "HISTFILESIZE=10000" >> $bashrc
 echo "================================================================" >> $bashrc

@@ -7,12 +7,10 @@ function fail(){
 
 function recoverFile(){
     file=$1
-    if [ ! -e $file ]
-    then echo "Backup file $file doesn't exist. Ignore it."
-    else
-        target="$HOME/$(basename $file)"
-        rm -f $target
-        mv $file $target || fail
+    target="$HOME/$(basename $file)"
+    rm -f $target
+    if [ -e $file ]
+    then mv $file $target || fail
     fi
 }
 
@@ -26,6 +24,7 @@ backupDir="$HOME/.linux_settings_backup"
 if [ -d $backupDir ]
 then 
     recover 
+    rm -rf $backupDir
 else 
     echo "$backupDir doesn't exist. Stop backup."
 fi
