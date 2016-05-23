@@ -38,7 +38,7 @@ ln -s "$scriptDir/vimrc" ~/.vimrc
 
 bashrc="$HOME/.bashrc" 
 backup $bashrc cp
-echo "====================Add by Bob Linux Setting====================" >> $bashrc
+echo "#====================Add by Bob Linux Setting====================" >> $bashrc
 echo "HISTFILESIZE=10000" >> $bashrc
-echo "================================================================" >> $bashrc
+echo "#================================================================" >> $bashrc
 
