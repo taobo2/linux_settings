@@ -1,12 +1,15 @@
 #!/bin/bash
 #bgColor=4 #red
 #bgColor=1 #blue
-if [ $EUID -ne 0 ];then
-PS1='$(tput setb 1)$(
+PS1=$(
+if [ $EUID -ne 0 ]; then bgColor='$(tput setb 1)'; 
+else bgColor='$(tput set 4)';fi;
+clearStyle='$(tput sgr0)'
+echo $bgColor'$(
     leftPrompt="$USER @ $HOSTNAME" 
     rightLen=$(($(tput cols) - ${#leftPrompt}))
     printf "%s%*s" "$leftPrompt" $rightLen "$(date -R)"
-    )$(tput sgr0)\n$(
+    )'$clearStyle'\n$(
     maxDirLen=$(($(tput cols)/3))
 
     if [[ ${PWD} =~ $HOME ]]
@@ -17,25 +20,8 @@ PS1='$(tput setb 1)$(
     then echo "\w"
     else echo ">\W"
     fi
-    ) $(tput setb 2)\$$(tput sgr0) '
-else
-PS1='$(tput setb 4)$(
-    leftPrompt="$USER @ $HOSTNAME" 
-    rightLen=$(($(tput cols) - ${#leftPrompt}))
-    printf "%s%*s" "$leftPrompt" $rightLen "$(date -R)"
-    )$(tput sgr0)\n$(
-    maxDirLen=$(($(tput cols)/3))
-
-    if [[ ${PWD} =~ $HOME ]]
-    then maxDirLen=$(($maxDirLen + ${#HOME}))
-    fi
-
-    if [ $maxDirLen -ge ${#PWD} ]
-    then echo "\w"
-    else echo ">\W"
-    fi
-    ) $(tput setb 2)\$$(tput sgr0) '
-fi
+    ) $(tput setb 2)\$'$clearStyle' '
+    )
 
 
 
