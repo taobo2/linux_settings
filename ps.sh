@@ -20,7 +20,7 @@ echo $bgColor'$(
     then echo "\w"
     else echo ">\W"
     fi
-    ) $(tput setb 2)\$'$clearStyle' '
+    ) $(tput setf 2)\$'$clearStyle' '
     )
 
 
