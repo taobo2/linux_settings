@@ -8,7 +8,7 @@ clearStyle='\[$(tput sgr0)\]'
 echo $bgColor'$(
     leftPrompt="$USER @ $HOSTNAME" 
     rightLen=$(($(tput cols) - ${#leftPrompt}))
-    printf "%s%*s" "$leftPrompt" $rightLen "$(date -R)"
+    printf "%s%*s" "$leftPrompt" $rightLen "$(date +%Y-%m-%d\ %H:%M:%S\ %z)"
     )'$clearStyle'\n$(
     maxDirLen=$(($(tput cols)/3))
 
