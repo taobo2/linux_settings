@@ -1,9 +1,9 @@
 #!/bin/bash
-#bgColor=4 #red
-#bgColor=1 #blue
+#bgColor=4 #blue
+#bgColor=1 #red
 PS1=$(
-if [ $EUID -ne 0 ]; then bgColor='$(tput setb 1)'; 
-else bgColor='\[$(tput set 4)\]';fi; #\[ \] to make command line wrap normally
+if [ $EUID -ne 0 ]; then bgColor='$(tput setab 4)'; 
+else bgColor='\[$(tput setab 1)\]';fi; #\[ \] to make command line wrap normally
 clearStyle='\[$(tput sgr0)\]'
 echo $bgColor'$(
     leftPrompt="$USER @ $HOSTNAME" 
@@ -20,7 +20,7 @@ echo $bgColor'$(
     then echo "\w"
     else echo ">\W"
     fi
-    ) \[$(tput setf 2)\]\$'$clearStyle' '
+    ) \[$(tput setaf 2)\]\$'$clearStyle' '
     )
 
 
