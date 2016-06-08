@@ -58,13 +58,13 @@ endfunction
 function FileStatus()
     let a:currentfile = expand('%')
     let a:fileNameLen = strlen(a:currentfile)
-    let a:status = TruncateStr(a:currentfile, g:statuslinelength)
+    let a:status = TruncateStr(a:currentfile, winwidth(0)/3)
     if a:fileNameLen >= g:statuslinelength
         return a:currentfile
     endif
     let a:status = a:status . " "  "concat
     let a:workingdir = getcwd()
-    let a:leftSpaces = g:statuslinelength - a:fileNameLen
+    let a:leftSpaces = winwidth(0)/3
     let a:status = a:status . TruncateStr(a:workingdir, a:leftSpaces)
     return a:status
 endfunction
