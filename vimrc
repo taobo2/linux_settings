@@ -43,10 +43,11 @@ set sessionoptions+=sesdir
 " %1*in%0* means use user1 color to word "in", then switch to the default color
 "
 " ctermfg is the front color for terminal vim.
-"highlight User1 ctermfg=green
+highlight StatusLine ctermbg=black
+highlight User1 ctermfg=white ctermbg=blue
+highlight User2 ctermfg=blue
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
-let g:statuslinelength=80 
 function TruncateStr(str, len)
     let a:strLen = strlen(a:str)
     if a:strLen <= a:len
@@ -55,17 +56,17 @@ function TruncateStr(str, len)
     return '<' . strpart(a:str, a:strLen - a:len)
 endfunction
 
-function FileStatus()
+function FileName()
     let a:currentfile = expand('%')
     let a:fileNameLen = strlen(a:currentfile)
     let a:status = TruncateStr(a:currentfile, winwidth(0)/3)
-    if a:fileNameLen >= g:statuslinelength
-        return a:status
-    endif
-    let a:status = a:status . " "  "concat
+    return a:status
+endfunction
+
+function WorkingDir()
     let a:workingdir = getcwd()
     let a:leftSpaces = winwidth(0)/3
-    let a:status = a:status . TruncateStr(a:workingdir, a:leftSpaces)
+    let a:status = TruncateStr(a:workingdir, a:leftSpaces)
     return a:status
 endfunction
 
@@ -73,9 +74,9 @@ endfunction
 
 "set statusline+=\ %1*%.40{getcwd()}%0* "set working directory
 
-set statusline=%{FileStatus()}
+set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}%0*
 "l means current line number; L means max line number.
-set statusline+=%=Col:%c
+set statusline+=%=%1*%P%0*\ %2*Col:%c%0*
 "set spell
 
 if strlen($TEMP) > 0 
