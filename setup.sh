@@ -1,6 +1,37 @@
 #!/bin/bash
 
+function checkComResult(){
+    command=$1
+    if [ $? -eq 0 ]
+    then
+        echo $command 'succeed.'
+    else
+        echo $command 'failed.' 1>&2
+        exit 1
+    fi
+}
+
+startLine="#====================Add by Bob Linux Setting====================" 
+endLine="#================================================================" 
 setDir=~/.bob_linux_settings
+bashrc=~/.bashrc
+
+function unsetup(){
+    sed -i "/$startLine/, /$endLine/d" $bashrc
+    checkComResult 'Recover .bashrc'
+    rm -f ~/.vimrc 
+    mv $setDir/.vimrc ~/.vimrc
+    checkComResult 'Recover .vimrc'
+    rm -rf $setDir
+}
+
+if [ "$1" = '-r' ]
+then 
+    unsetup
+    exit 0
+fi
+
+
 if [  -d $setDir ]
 then 
     echo -e 'It seems that the setup has been run.\n'
@@ -8,16 +39,10 @@ then
     if [ $run != 'y' ] 
     then exit 0
     fi
-    
-    read -p 'The previous backup files will be removed. Are you sure?(Y/n)' run
-    if [ $run != 'Y' ]
-    then exit 0
-    fi
-else
-    mkdir $setDir || { echo "Fail to create backup dir $setDir." 1>&2; exit 1; }
+    unsetup   
 fi
 
-scriptDir=$(dirname "$(readlink -f "$0")")
+mkdir $setDir || { echo "Fail to create backup dir $setDir." 1>&2; exit 1; }
 
 function backup(){
     local file=$1
@@ -32,17 +57,18 @@ function backup(){
     $2 $file $backup || { echo "Fail to backup $file." 1>&2; exit 1 ;}
 }
 
+scriptDir=$(cd $(dirname "$BASH_SOURCE[0]") && pwd -P && cd - > /dev/null)
+
 vimrc="$HOME/.vimrc" 
 backup $vimrc mv
-ln -s "$scriptDir/vimrc" ~/.vimrc
-
-bashrc="$HOME/.bashrc" 
-backup $bashrc cp
+cp -f $scriptDir/vimrc $HOME/.vimrc 
+checkComResult 'Set .vimrc'
 
 cp -f $scriptDir/ps.sh $setDir/ps.sh
 
-echo "#====================Add by Bob Linux Setting====================" >> $bashrc
+echo $startLine >> $bashrc
 echo "HISTFILESIZE=10000" >> $bashrc
 echo "source $setDir/ps.sh" >> $bashrc
-echo "#================================================================" >> $bashrc
+echo $endLine >> $bashrc
+checkComResult 'Set .bashrc'
 

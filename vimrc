@@ -52,7 +52,7 @@ function TruncateStr(str, len)
     if a:strLen <= a:len
         return a:str
     endif
-    return '>' . strpart(a:str, a:strLen - a:len)
+    return '<' . strpart(a:str, a:strLen - a:len)
 endfunction
 
 function FileStatus()
@@ -60,7 +60,7 @@ function FileStatus()
     let a:fileNameLen = strlen(a:currentfile)
     let a:status = TruncateStr(a:currentfile, winwidth(0)/3)
     if a:fileNameLen >= g:statuslinelength
-        return a:currentfile
+        return a:status
     endif
     let a:status = a:status . " "  "concat
     let a:workingdir = getcwd()
