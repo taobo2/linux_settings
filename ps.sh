@@ -6,7 +6,7 @@ if [ $EUID -ne 0 ]; then bgColor='\[$(tput setab 4)\]';
 else bgColor='\[$(tput setab 1)\]';fi; #\[ \] to make command line wrap normally
 
 clearStyle='\[$(tput sgr0)\]'
-echo $bgColor'\[$(tput setaf 7)\[$(
+echo $bgColor'\[$(tput setaf 7)$(tput bold)\]$(
     leftPrompt="$USER @ $HOSTNAME" 
     rightLen=$(($(tput cols) - ${#leftPrompt}))
     printf "%s%*s" "$leftPrompt" $rightLen "$(date +%Y-%m-%d\ %H:%M:%S\ %z)"
