@@ -2,7 +2,8 @@
 
 function checkComResult(){
     command=$1
-    if [ $? -eq 0 ]
+    result=$2
+    if [ $result -eq 0 ]
     then
         echo $command 'succeed.'
     else
@@ -17,11 +18,18 @@ setDir=~/.bob_linux_settings
 bashrc=~/.bashrc
 
 function unsetup(){
-    sed -i "/$startLine/, /$endLine/d" $bashrc
-    checkComResult 'Recover .bashrc'
-    rm -f ~/.vimrc 
-    mv $setDir/.vimrc ~/.vimrc
-    checkComResult 'Recover .vimrc'
+    if [ "$(uname)" == "Darwin" ]; then
+        sed -i ''  "/$startLine/, /$endLine/d" $bashrc
+    else
+        sed -i "/$startLine/, /$endLine/d" $bashrc
+    fi
+    checkComResult 'Recover .bashrc' $? #pass $? as parameter, since call function(function is a command itself)  may reset $?
+
+    if [ -e $setDir/.vimrc ]; then
+        rm -f ~/.vimrc 
+        mv $setDir/.vimrc ~/.vimrc
+        checkComResult 'Recover .vimrc' $?
+    fi
     rm -rf $setDir
 }
 
@@ -61,8 +69,8 @@ scriptDir=$(cd $(dirname "$BASH_SOURCE[0]") && pwd -P && cd - > /dev/null)
 
 vimrc="$HOME/.vimrc" 
 backup $vimrc mv
-cp -f $scriptDir/vimrc $HOME/.vimrc 
-checkComResult 'Set .vimrc'
+cp  $scriptDir/vimrc $HOME/.vimrc 
+checkComResult 'Set .vimrc' $?
 
 cp -f $scriptDir/ps.sh $setDir/ps.sh
 
@@ -70,5 +78,5 @@ echo $startLine >> $bashrc
 echo "HISTFILESIZE=10000" >> $bashrc
 echo "source $setDir/ps.sh" >> $bashrc
 echo $endLine >> $bashrc
-checkComResult 'Set .bashrc'
+checkComResult 'Set .bashrc' $?
 
