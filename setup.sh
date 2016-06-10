@@ -77,6 +77,7 @@ cp -f $scriptDir/ps.sh $setDir/ps.sh
 echo $startLine >> $bashrc
 echo "HISTFILESIZE=10000" >> $bashrc
 echo "source $setDir/ps.sh" >> $bashrc
+echo "set -o vi" >> $bashrc
 echo $endLine >> $bashrc
 checkComResult 'Set .bashrc' $?
 
