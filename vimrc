@@ -6,7 +6,7 @@ syntax on
 set fileencoding=utf-8
 set fileencodings=ucs-bom,utf-8,chinese,cp936
 set ruler
-colorscheme darkblue
+colorscheme evening
 set tabstop=4
 set shiftwidth=4 "length for (auto)indent
 set expandtab
@@ -43,9 +43,9 @@ set sessionoptions+=sesdir
 " %1*in%0* means use user1 color to word "in", then switch to the default color
 "
 " ctermfg is the front color for terminal vim.
-highlight StatusLine ctermbg=black
-highlight User1 ctermfg=white ctermbg=blue
-highlight User2 ctermfg=black ctermbg=yellow
+highlight StatusLine ctermbg=black guibg=black
+highlight User1 ctermfg=white ctermbg=blue guifg=white guibg=blue
+highlight User2 ctermfg=black ctermbg=yellow guifg=black guibg=yellow
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
 function TruncateStr(str, len)
@@ -65,7 +65,7 @@ endfunction
 
 function WorkingDir()
     let a:workingdir = getcwd()
-    let a:leftSpaces = winwidth(0)/3
+    let a:leftSpaces = winwidth(0) * 2 / 3 - strlen(FileName())
     let a:status = TruncateStr(a:workingdir, a:leftSpaces)
     return a:status
 endfunction
