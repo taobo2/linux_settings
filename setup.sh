@@ -75,7 +75,10 @@ checkComResult 'Set .vimrc' $?
 cp -f $scriptDir/ps.sh $setDir/ps.sh
 
 echo $startLine >> $bashrc
-echo "HISTFILESIZE=10000" >> $bashrc
+echo "export HISTFILESIZE=10000" >> $bashrc
+echo 'export HISTIGNORE="rm*:sudo rm*"' >> $bashrc
+echo 'export HISTCONTROL="ignorespace"' >> $bashrc
+echo 'alias rm="rm -i"' >> $bashrc
 echo "source $setDir/ps.sh" >> $bashrc
 echo $endLine >> $bashrc
 checkComResult 'Set .bashrc' $?
