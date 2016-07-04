@@ -1,5 +1,5 @@
 set nocompatible
-set nu
+"set nu
 "set autoindent
 set ignorecase smartcase
 syntax on
@@ -76,7 +76,9 @@ endfunction
 
 set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}%0*
 "l means current line number; L means max line number.
-set statusline+=%=%1*%P%0*%2*\ Col:%c%0*
+set statusline+=%=%1*%P%0*%2*[%l\ %c]%0*
+"statusline shouldnot contain spaces, if spaces are required, a \ should
+"before the space
 "set spell
 
 if strlen($TEMP) > 0 
