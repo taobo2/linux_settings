@@ -23,6 +23,7 @@ set ls=2
 "path define where command (such as find) goes to find files, ** means all sub
 "directories
 set path+=./**
+set relativenumber
 
 
 
