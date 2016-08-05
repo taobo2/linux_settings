@@ -24,6 +24,7 @@ set ls=2
 "directories
 set path+=./**
 set relativenumber
+set autoread
 
 
 
