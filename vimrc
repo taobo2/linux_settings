@@ -99,7 +99,7 @@ endif
 filetype plugin indent on
 
 
-command Wa :w|!an
+command Wa :w|!ant
 
 "pathogen
 "call pathogen#infect()
