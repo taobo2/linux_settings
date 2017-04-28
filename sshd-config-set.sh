@@ -18,6 +18,7 @@ else
     echo 'ClientAliveInterval 120' >> $config_file
     echo 'ClientAliveCountMax 720' >> $config_file
     echo 'AllowAgentForwarding yes' >> $config_file
+    echo 'GatewayPorts clientspecified' >> $config_file
 fi
   
 service sshd restart 
