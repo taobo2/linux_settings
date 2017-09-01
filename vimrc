@@ -85,21 +85,21 @@ set statusline+=%=%1*%P%0*%2*[%l\ %c]%0*
 
 if strlen($TEMP) > 0 
     set backupdir=$TEMP
-    set directory=$TEMP
+    "set directory=$TEMP
 elseif strlen($TMPDIR) > 0
     set backupdir=$TMPDIR
-    set directory=$TMPDIR
+    "set directory=$TMPDIR
 else
     set backupdir=/tmp
     "The 'directory' option controls where swap files go
-    set directory=/tmp
+    "set directory=/tmp
 endif
 
 
 filetype plugin indent on
 
 
-command Wa :w|!ant
+command Wa :wa|!ant
 
 "pathogen
 "call pathogen#infect()
