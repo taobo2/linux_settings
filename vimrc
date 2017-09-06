@@ -25,6 +25,7 @@ set ls=2
 set path+=./**
 set relativenumber
 set autoread
+set backup
 
 
 
@@ -82,22 +83,40 @@ set statusline+=%=%1*%P%0*%2*[%l\ %c]%0*
 "statusline shouldnot contain spaces, if spaces are required, a \ should
 "before the space
 "set spell
+function SetBackupdir(dir)
+    let l:backup = a:dir . "/vimbackup"
+    if !isdirectory(l:backup)
+        call mkdir(l:backup, "p")
+    endif
+    let &backupdir = l:backup . "//"
+
+    let l:directory = a:dir . "/vimswp"
+    if !isdirectory(l:directory)
+        call mkdir(l:directory, "p")
+    endif
+    "The 'directory' option controls where swap files go
+    let &directory = l:directory . "//"
+
+    let l:undodir = a:dir . "/vimundo"
+    if !isdirectory(l:undodir)
+        call mkdir(l:undodir, "p")
+    endif
+    let &undodir = l:undodir . "//"
+endfunction
 
 if strlen($TEMP) > 0 
-    set backupdir=$TEMP
-    "set directory=$TEMP
+    call SetBackupdir($TEMP)
 elseif strlen($TMPDIR) > 0
-    set backupdir=$TMPDIR
-    "set directory=$TMPDIR
+    call SetBackupdir($TMPDIR)
 else
-    set backupdir=/tmp
-    "The 'directory' option controls where swap files go
-    "set directory=/tmp
+    call SetBackupdir("/tmp")
 endif
 
 
 filetype plugin indent on
 
+"rename backupfile to contain full path info
+autocmd BufWritePre * let &backupext = substitute(expand('%:p:h'), '/', '%', 'g')
 
 command Wa :wa|!ant
 
