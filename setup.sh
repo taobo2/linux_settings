@@ -78,7 +78,8 @@ echo $startLine >> $bashrc
 echo "export HISTFILESIZE=10000" >> $bashrc
 echo 'export HISTIGNORE="rm*:sudo rm*"' >> $bashrc
 echo 'export HISTCONTROL="ignorespace"' >> $bashrc
-echo "source $setDir/ps.sh" >> $bashrc
+echo "export PS1='\[$(tput setaf 3)\]\t \u@\h \W $ \[$(tput sgr0)\]'" >> $bashrc
+#echo "source $setDir/ps.sh" >> $bashrc
 echo $endLine >> $bashrc
 checkComResult 'Set .bashrc' $?
 
