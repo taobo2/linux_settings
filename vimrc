@@ -77,9 +77,11 @@ endfunction
 
 "set statusline+=\ %1*%.40{getcwd()}%0* "set working directory
 
-set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}%0*
+set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}
+"Terminate User2 at the beginning of right-align status, so that User2 
+"can be applied emptiness between this and right-align status.
 "l means current line number; L means max line number.
-set statusline+=%=%1*%P%0*%2*[%l\ %c]%0*
+set statusline+=%=%0*%1*%P%0*%2*[%l\ %c]%0*
 "statusline shouldnot contain spaces, if spaces are required, a \ should
 "before the space
 "set spell
