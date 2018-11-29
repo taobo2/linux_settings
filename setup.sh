@@ -15,7 +15,7 @@ function checkComResult(){
 startLine="#====================Add by Bob Linux Setting====================" 
 endLine="#================================================================" 
 setDir=~/.bob_linux_settings
-bashrc=~/.bashrc
+bashrc=~/.profile
 
 function unsetup(){
     if [ "$(uname)" == "Darwin" ]; then
