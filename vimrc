@@ -52,25 +52,25 @@ highlight User2 ctermfg=black ctermbg=yellow guifg=black guibg=yellow
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
 function TruncateStr(str, len)
-    let a:strLen = strlen(a:str)
-    if a:strLen <= a:len
+    let strLen = strlen(a:str)
+    if strLen <= a:len
         return a:str
     endif
-    return '<' . strpart(a:str, a:strLen - a:len)
+    return '<' . strpart(a:str, strLen - a:len)
 endfunction
 
 function FileName()
-    let a:currentfile = expand('%')
-    let a:fileNameLen = strlen(a:currentfile)
-    let a:status = TruncateStr(a:currentfile, winwidth(0)/3)
-    return a:status
+    let currentfile = expand('%')
+    let fileNameLen = strlen(currentfile)
+    let status = TruncateStr(currentfile, winwidth(0)/3)
+    return status
 endfunction
 
 function WorkingDir()
-    let a:workingdir = getcwd()
-    let a:leftSpaces = winwidth(0) * 2 / 3 - strlen(FileName())
-    let a:status = TruncateStr(a:workingdir, a:leftSpaces)
-    return a:status
+    let workingdir = getcwd()
+    let leftSpaces = winwidth(0) * 2 / 3 - strlen(FileName())
+    let status = TruncateStr(workingdir, leftSpaces)
+    return status
 endfunction
 
 "set statusline=%.40F
