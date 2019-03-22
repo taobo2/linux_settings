@@ -120,7 +120,14 @@ filetype plugin indent on
 "rename backupfile to contain full path info
 autocmd BufWritePre * let &backupext = substitute(expand('%:p:h'), '/', '%', 'g')
 
-command Wa :wa|!ant
+"command Wa :wa|!ant
+
+inoremap () ()<left>
+inoremap <> <><left>
+inoremap [] []<left>
+inoremap {} {}<left>
+inoremap '' ''<left>
+inoremap "" ""<left>
 
 "pathogen
 "call pathogen#infect()
