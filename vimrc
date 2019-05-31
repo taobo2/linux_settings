@@ -122,12 +122,19 @@ autocmd BufWritePre * let &backupext = substitute(expand('%:p:h'), '/', '%', 'g'
 
 "command Wa :wa|!ant
 
-inoremap () ()<left>
-inoremap <> <><left>
-inoremap [] []<left>
-inoremap {} {}<left>
-inoremap '' ''<left>
-inoremap "" ""<left>
+function CC()
+    let l:current = getline(".")[col(".") - 1]
+    return l:current
+endfunction
+
+autocmd FileType javascript,java inoremap <buffer> <expr> ( CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "()<left>" : "("
+autocmd FileType javascript,java inoremap <buffer> <expr> [ CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "[]<left>" : "["
+autocmd FileType javascript,java inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
+autocmd FileType javascript,java inoremap <buffer> <expr> ' CC() == "" \|\| stridx("}]);'\"", CC()) >= 0 ? "''<left>" : "'"
+autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'\"", CC()) >= 0 ? "\"\"<left>" : "\""
+autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'\"", CC()) >= 0 ? "\"\"<left>" : "\""
+autocmd FileType javascript,java inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
+
 
 "pathogen
 "call pathogen#infect()
