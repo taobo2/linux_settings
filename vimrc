@@ -122,8 +122,13 @@ autocmd BufWritePre * let &backupext = substitute(expand('%:p:h'), '/', '%', 'g'
 
 "command Wa :wa|!ant
 
-function CC()
-    let l:current = getline(".")[col(".") - 1]
+function CC(...)
+    if a:0 > 0
+        let l:shift = a:1
+    else
+        let l:shift = 0
+    endif
+    let l:current = getline(".")[ col(".") - 1 + l:shift ]
     return l:current
 endfunction
 
@@ -132,8 +137,12 @@ autocmd FileType javascript,java inoremap <buffer> <expr> [ CC() == "" \|\| stri
 autocmd FileType javascript,java inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
 autocmd FileType javascript,java inoremap <buffer> <expr> ' CC() == "" \|\| stridx("}]);'\"", CC()) >= 0 ? "''<left>" : "'"
 autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'\"", CC()) >= 0 ? "\"\"<left>" : "\""
-autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'\"", CC()) >= 0 ? "\"\"<left>" : "\""
 autocmd FileType javascript,java inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
+
+
+autocmd FileType javascript,java inoremap <buffer> <expr> ) CC() == ")" ? "<right>" : ")"
+autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<right>" : "]"
+autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
 
 
 "pathogen
