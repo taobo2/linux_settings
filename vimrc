@@ -145,6 +145,8 @@ autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<righ
 autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
 
 
+autocmd FileType javascript,java inoremap <buffer> ;;  <C-O>A;<cr>
+
 "pathogen
 "call pathogen#infect()
 
