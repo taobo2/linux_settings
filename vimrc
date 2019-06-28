@@ -135,11 +135,15 @@ endfunction
 autocmd FileType javascript,java inoremap <buffer> <expr> ( CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "()<left>" : "("
 autocmd FileType javascript,java inoremap <buffer> <expr> [ CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "[]<left>" : "["
 autocmd FileType javascript,java inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
-autocmd FileType javascript,java inoremap <buffer> <expr> ' CC() == "" \|\| stridx("}]);\"", CC()) >= 0 ? "''<left>" : "'"
-autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'", CC()) >= 0 ? "\"\"<left>" : "\""
+autocmd FileType javascript,java inoremap <buffer> <expr> ' CC() == "" \|\| stridx("}]);\"", CC()) >= 0 ? "''<left>" : CC() == "'" ? "<right>" : "'"
+autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'", CC()) >= 0 ? "\"\"<left>" : CC() == "\"" ? "<right>" : "\""
 autocmd FileType javascript,java inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
 
-autocmd FileType javascript,java inoremap <buffer> ;;  <C-O>A;
+autocmd FileType javascript,java inoremap <buffer> <expr> ) CC() == ")" ? "<right>" : ")"
+autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<right>" : "]"
+autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
+
+autocmd FileType javascript,java inoremap <buffer> <expr> ;;  CC() == "" ? "<esc>]}a;" : "<C-O>A;"
 autocmd FileType javascript,java inoremap <buffer> ,,  <C-O>A,
 autocmd FileType javascript,java imap <buffer> {{  <C-O>A{
 
