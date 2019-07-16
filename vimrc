@@ -143,10 +143,6 @@ autocmd FileType javascript,java inoremap <buffer> <expr> ) CC() == ")" ? "<righ
 autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<right>" : "]"
 autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
 
-autocmd FileType javascript,java inoremap <buffer> <expr> ;;  CC() == "" ? "<esc>]}a;" : "<C-O>A;"
-autocmd FileType javascript,java inoremap <buffer> <expr> ,,  CC() == "" ? "<esc>]}a," : "<C-O>A,"
-autocmd FileType javascript,java imap <buffer> {{  <C-O>A{
-
 "pathogen
 "call pathogen#infect()
 
