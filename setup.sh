@@ -21,7 +21,7 @@ function unsetup(){
     if [ "$(uname)" == "Darwin" ]; then
         sed -i ''  "/$startLine/, /$endLine/d" $bashrc
     else
-        sed -i "/$startLine/, /$endLine/d" $bashrc
+        sed -i "/$startLine/,/$endLine/d" $bashrc
     fi
     checkComResult 'Recover .bashrc' $? #pass $? as parameter, since call function(function is a command itself)  may reset $?
 
