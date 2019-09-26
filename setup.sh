@@ -78,11 +78,12 @@ echo $startLine >> $bashrc
 echo "export HISTFILESIZE=10000" >> $bashrc
 echo 'export HISTIGNORE="rm*:sudo rm*"' >> $bashrc
 echo 'export HISTCONTROL="ignorespace"' >> $bashrc
+echo 'export PATH=$PATH:./' >> $bashrc
 
 echo 'if [ "$TERM" = "screen" ]; then' >> $bashrc
-echo "  export PS1='\[$(tput setaf 6)\]\t \h \u \W $ \[$(tput sgr0)\]'" >> $bashrc
+echo "  export PS1='\[$(tput setab 6)\]\[$(tput setaf 0)\]\t \h \u \W $ \[$(tput sgr0)\]'" >> $bashrc
 echo "else"  >> $bashrc
-echo "  export PS1='\[$(tput setaf 3)\]\t \h \u \W $ \[$(tput sgr0)\]'" >> $bashrc
+echo "  export PS1='\[$(tput setab 3)\]\[$(tput setaf 0)\]\t \h \u \W $ \[$(tput sgr0)\]'" >> $bashrc
 echo "fi" >> $bashrc
 
 echo 'export EDITOR=vim' >> $bashrc
