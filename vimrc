@@ -46,9 +46,14 @@ set sessionoptions+=sesdir
 " %1*in%0* means use user1 color to word "in", then switch to the default color
 "
 " ctermfg is the front color for terminal vim.
-highlight StatusLine ctermbg=black guibg=black
-highlight User1 ctermfg=white ctermbg=blue guifg=white guibg=blue
-highlight User2 ctermfg=black ctermbg=yellow guifg=black guibg=yellow
+highlight StatusLine ctermbg=yellow guibg=yellow
+highlight User1 ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow
+highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow
+"for non current window statusline
+"Differences in User1/User2 with StatusLine overwrites corresponding settings
+"in StatusLineNC
+highlight StatusLineNC ctermbg=darkgrey guibg=darkgrey
+
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
 function TruncateStr(str, len)
