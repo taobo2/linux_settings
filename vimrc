@@ -84,6 +84,9 @@ set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}
 set statusline+=%=%0*%1*%P%0*%2*[%l\ %c]%0*
 "statusline shouldnot contain spaces, if spaces are required, a \ should
 "before the space
+"
+"add current split window index
+set statusline+=%1*win\ %{winnr()}%0* 
 "set spell
 function SetBackupdir(dir)
     let l:backup = a:dir . "/vimbackup"
@@ -142,6 +145,9 @@ autocmd FileType javascript,java inoremap <buffer> <expr> <cr> CC() == "}" ? "<c
 autocmd FileType javascript,java inoremap <buffer> <expr> ) CC() == ")" ? "<right>" : ")"
 autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<right>" : "]"
 autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
+
+"update all windows' statuslines when creating a new window
+autocmd WinEnter * :redraws!
 
 "pathogen
 "call pathogen#infect()
