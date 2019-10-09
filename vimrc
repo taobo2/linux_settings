@@ -26,6 +26,7 @@ set path+=./**
 set relativenumber
 set autoread
 set backup
+set tags+=.ctags;
 
 
 
