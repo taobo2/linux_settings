@@ -52,7 +52,7 @@ highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow
 "for non current window statusline
 "Differences in User1/User2 with StatusLine overwrites corresponding settings
 "in StatusLineNC
-highlight StatusLineNC ctermbg=darkgrey guibg=darkgrey
+highlight StatusLineNC ctermbg=240 
 
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
