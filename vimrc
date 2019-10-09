@@ -61,6 +61,9 @@ highlight StatusLineNC ctermbg=240 cterm=bold
 highlight StatusLineTerm ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
 highlight StatusLineTermNC ctermbg=240 cterm=bold 
 
+"for wildmenu
+highlight WildMenu ctermfg=White ctermbg=Black
+
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
 function TruncateStr(str, len)
