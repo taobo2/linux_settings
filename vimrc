@@ -46,7 +46,7 @@ set sessionoptions+=sesdir
 " %1*in%0* means use user1 color to word "in", then switch to the default color
 "
 " ctermfg is the front color for terminal vim.
-highlight StatusLine ctermbg=yellow guibg=yellow
+highlight StatusLine ctermfg=Black ctermbg=yellow guibg=yellow
 highlight User1 ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow
 highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow
 "for non current window statusline
