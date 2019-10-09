@@ -47,18 +47,19 @@ set sessionoptions+=sesdir
 " %1*in%0* means use user1 color to word "in", then switch to the default color
 "
 " ctermfg is the front color for terminal vim.
-" cterm is for the terminal with color
-highlight StatusLine cterm=bold ctermfg=Black ctermbg=yellow guibg=yellow
-highlight User1 cterm=bold ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow
-highlight User2 cterm=bold ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow
+" cterm is for the terminal with color; bold atrribute may be removed by
+" ctermfg in some terminal, put it at the end
+highlight StatusLine ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
+highlight User1 ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow cterm=bold 
+highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow cterm=bold 
 "for non current window statusline
 "Differences in User1/User2 with StatusLine overwrites corresponding settings
 "in StatusLineNC
-highlight StatusLineNC cterm=bold ctermbg=240 
+highlight StatusLineNC ctermbg=240 cterm=bold 
 
 "for terminal window
-highlight StatusLineTerm ctermfg=Black ctermbg=yellow guibg=yellow
-highlight StatusLineTermNC cterm=bold ctermbg=240 
+highlight StatusLineTerm ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
+highlight StatusLineTermNC ctermbg=240 cterm=bold 
 
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
