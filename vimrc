@@ -26,7 +26,8 @@ set path+=./**
 set relativenumber
 set autoread
 set backup
-set tags+=.ctags;
+"./ is replaced with the path of the current file
+set tags+=./.tags;
 
 
 
