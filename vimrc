@@ -140,7 +140,10 @@ endif
 filetype plugin indent on
 
 "rename backupfile to contain full path info
-autocmd BufWritePre * let &backupext = substitute(expand('%:p:h'), '/', '%', 'g')
+augroup backup
+    autocmd!
+    autocmd BufWritePre * let &backupext = substitute(expand('%:p:h'), '/', '%', 'g')
+augroup END
 
 "command Wa :wa|!ant
 
@@ -154,19 +157,25 @@ function CC(...)
     return l:current
 endfunction
 
-autocmd FileType javascript,java inoremap <buffer> <expr> ( CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "()<left>" : "("
-autocmd FileType javascript,java inoremap <buffer> <expr> [ CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "[]<left>" : "["
-autocmd FileType javascript,java inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
-autocmd FileType javascript,java inoremap <buffer> <expr> ' CC() == "" \|\| stridx("}]);\"", CC()) >= 0 ? "''<left>" : CC() == "'" ? "<right>" : "'"
-autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'", CC()) >= 0 ? "\"\"<left>" : CC() == "\"" ? "<right>" : "\""
-autocmd FileType javascript,java inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
+augroup autocode
+    autocmd!
+    autocmd FileType javascript,java inoremap <buffer> <expr> ( CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "()<left>" : "("
+    autocmd FileType javascript,java inoremap <buffer> <expr> [ CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "[]<left>" : "["
+    autocmd FileType javascript,java inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
+    autocmd FileType javascript,java inoremap <buffer> <expr> ' CC() == "" \|\| stridx("}]);\"", CC()) >= 0 ? "''<left>" : CC() == "'" ? "<right>" : "'"
+    autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'", CC()) >= 0 ? "\"\"<left>" : CC() == "\"" ? "<right>" : "\""
+    autocmd FileType javascript,java inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
 
-autocmd FileType javascript,java inoremap <buffer> <expr> ) CC() == ")" ? "<right>" : ")"
-autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<right>" : "]"
-autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
+    autocmd FileType javascript,java inoremap <buffer> <expr> ) CC() == ")" ? "<right>" : ")"
+    autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<right>" : "]"
+    autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
+augroup END
 
 "update all windows' statuslines when creating a new window
-autocmd WinEnter * :redraws!
+augroup statusupdate
+    autocmd!
+    autocmd WinEnter * :redraws!
+augroup END
 
 
 function OnWinEnter()
@@ -186,7 +195,10 @@ endfunction
 tnoremap <silent> <F3> <c-w>:let t:jumping=1<cr><c-w>p
 nnoremap <silent> <F3> :let t:jumping=1<cr><c-w>p
 inoremap <silent> <F3> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
-autocmd WinEnter * :call OnWinEnter()
+augroup windowjump
+    autocmd!
+    autocmd WinEnter * :call OnWinEnter()
+augroup END
 
 "toggle between current/last-accessed tabs
 if !exists('g:lasttab')
@@ -196,7 +208,10 @@ endif
 nnoremap <silent> <F2> :exe "tabn ".g:lasttab<CR>
 inoremap <silent> <F2> <esc>:exe "tabn ".g:lasttab<CR>
 tnoremap <silent> <F2> <c-w>:exe "tabn ".g:lasttab<CR>
-au TabLeave * let g:lasttab = tabpagenr()
+augroup tabjump
+    autocmd!
+    au TabLeave * let g:lasttab = tabpagenr()
+augroup END
 
 "pathogen
 "call pathogen#infect()
