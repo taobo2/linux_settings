@@ -165,6 +165,25 @@ autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<righ
 "update all windows' statuslines when creating a new window
 autocmd WinEnter * :redraws!
 
+
+function OnWinEnter()
+    if exists("t:jumping") && t:jumping
+        unlet t:jumping 
+        if exists("w:jumpmode") && w:jumpmode == "i"
+            startinsert
+        endif
+    endif
+
+    if exists("w:jumpmode")
+        unlet w:jumpmode
+    endif
+endfunction
+
+"toggle between current/last windows
+tnoremap <F3> <c-w>:let t:jumping=1<cr><c-w>p
+nnoremap <F3> :let t:jumping=1<cr><c-w>p
+inoremap <F3> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
+autocmd WinEnter * :call OnWinEnter()
 "pathogen
 "call pathogen#infect()
 
