@@ -29,6 +29,8 @@ set backup
 "./ is replaced with the path of the current file
 set tags+=./.tags;
 set pastetoggle=<F4>
+"allow hide modified buffer
+set hidden
 
 
 
