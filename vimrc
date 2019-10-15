@@ -213,6 +213,18 @@ augroup tabjump
     au TabLeave * let g:lasttab = tabpagenr()
 augroup END
 
+"max a window
+function ToggleWin()
+    if exists("b:originWin")
+        execute "tabc"
+        let success = win_gotoid(b:originWin)
+        unlet b:originWin
+    else
+        let b:originWin = win_getid()
+        execute "tab split"
+    endif
+endfunction
+nnoremap <silent> <F4> :call ToggleWin()<cr>
 "pathogen
 "call pathogen#infect()
 
