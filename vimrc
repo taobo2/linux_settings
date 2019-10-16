@@ -28,7 +28,7 @@ set autoread
 set backup
 "./ is replaced with the path of the current file
 set tags+=./.tags;
-set pastetoggle=<F4>
+set pastetoggle=<F5>
 "allow hide modified buffer
 set hidden
 
