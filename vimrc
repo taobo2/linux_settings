@@ -28,7 +28,7 @@ set autoread
 set backup
 "./ is replaced with the path of the current file
 set tags+=./.tags;
-set pastetoggle=<F5>
+set pastetoggle=<F6>
 "allow hide modified buffer
 set hidden
 
@@ -225,8 +225,18 @@ function ToggleWin()
     endif
 endfunction
 nnoremap <silent> <F4> :call ToggleWin()<cr>
+
+
+if $TERM_PROGRAM == "Apple_Terminal"
+    set <S-F5>=[25~
+endif
+" map <F5> and <S-F5> to jump between locations in a quickfix list, or
+" differences if in window in diff mode
+nnoremap <expr> <silent> <F5>   (&diff ? "]c" : ":cnext\<CR>")
+nnoremap <expr>  <silent> <S-F5> (&diff ? "[c" : ":cprev\<CR>")
+
 "pathogen
-"call pathogen#infect()
+"CALL PATHOGEN#infect()
 
 
 
