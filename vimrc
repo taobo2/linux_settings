@@ -242,3 +242,9 @@ nnoremap <expr>  <silent> <S-F5> (&diff ? "[c" : ":cprev\<CR>")
 
 "autocmd FileType javascript set makeprg=jsl\ -nologo\ -nofilelisting\ -nosummary\ -nocontext\ -conf\ '/cygwin64/etc/jsl.conf'\ -process\ %
 "autocmd FileType javascript set errorformat=%f(%l):\ %m
+"
+"
+augroup filefold
+    autocmd! 
+    autocmd Syntax javascript setlocal foldmethod=indent | normal zR
+augroup END 
