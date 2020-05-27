@@ -6,7 +6,7 @@ syntax on
 set fileencoding=utf-8
 set fileencodings=ucs-bom,utf-8,chinese,cp936
 set ruler
-colorscheme elflord
+colorscheme evening
 set tabstop=4
 set shiftwidth=4 "length for (auto)indent
 set expandtab
