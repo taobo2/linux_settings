@@ -16,7 +16,7 @@ set hlsearch
 set incsearch
 "autocmd InsertEnter * set cursorline cursorcolumn
 "autocmd InsertLeave * set nocursorline nocursorcolumn
-set cursorline cursorcolumn
+"set cursorline cursorcolumn
 set wildmenu
 set history=10000
 set ls=2
@@ -96,7 +96,10 @@ endfunction
 
 "set statusline+=\ %1*%.40{getcwd()}%0* "set working directory
 
-set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}
+"set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}
+"%t means name of the current file
+set statusline=%1*%t%0*%2*\ %{getcwd()}
+
 "Terminate User2 at the beginning of right-align status, so that User2 
 "can be applied emptiness between this and right-align status.
 "l means current line number; L means max line number.
@@ -105,7 +108,9 @@ set statusline+=%=%0*%1*%P%0*%2*[%l\ %c]%0*
 "before the space
 "
 "add current split window index
-set statusline+=%1*win\ %{winnr()}%0* 
+"set statusline+=%1*win\ %{winnr()}%0* 
+"add modified flag
+set statusline+=%1*%m%0*
 "set spell
 function SetBackupdir(dir)
     let l:backup = a:dir . "/vimbackup"
