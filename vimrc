@@ -32,6 +32,8 @@ set pastetoggle=<F6>
 "allow hide modified buffer
 set hidden
 
+set guioptions-=L "turn off left scroll bar
+set guioptions-=r "turn off right scroll bar
 
 
 "curdir means save current dir in this session
@@ -53,13 +55,13 @@ set sessionoptions+=sesdir
 " ctermfg is the front color for terminal vim.
 " cterm is for the terminal with color; bold atrribute may be removed by
 " ctermfg in some terminal, put it at the end
-highlight StatusLine ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
-highlight User1 ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow cterm=bold 
-highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow cterm=bold 
+highlight StatusLine ctermfg=Black ctermbg=yellow guifg=Black guibg=yellow cterm=bold 
+highlight User1 ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow cterm=bold gui=bold
+highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow cterm=bold gui=bold
 "for non current window statusline
 "Differences in User1/User2 with StatusLine overwrites corresponding settings
 "in StatusLineNC
-highlight StatusLineNC ctermbg=240 cterm=bold 
+highlight StatusLineNC ctermfg=white ctermbg=Black cterm=bold guifg=white guibg=black  gui=NONE
 
 "for terminal window
 highlight StatusLineTerm ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
@@ -98,19 +100,21 @@ endfunction
 
 "set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}
 "%t means name of the current file
-set statusline=%1*%t%0*%2*\ %{getcwd()}
+"set statusline=%1*%t%0*%2*\ %{getcwd()}
+set statusline=%t\ \ %{getcwd()}
 
 "Terminate User2 at the beginning of right-align status, so that User2 
 "can be applied emptiness between this and right-align status.
 "l means current line number; L means max line number.
-set statusline+=%=%0*%1*%P%0*%2*[%l\ %c]%0*
+"set statusline+=%=%0*%1*%P%0*%2*[%l\ %c]%0*
+set statusline+=%=\ \ %P[%l\ %c]%m
 "statusline shouldnot contain spaces, if spaces are required, a \ should
 "before the space
 "
 "add current split window index
 "set statusline+=%1*win\ %{winnr()}%0* 
 "add modified flag
-set statusline+=%1*%m%0*
+"set statusline+=%1*%m%0*
 "set spell
 function SetBackupdir(dir)
     let l:backup = a:dir . "/vimbackup"
