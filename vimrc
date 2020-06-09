@@ -222,7 +222,21 @@ augroup tabjump
     au TabLeave * let g:lasttab = tabpagenr()
 augroup END
 
-"max a window
+if $TERM_PROGRAM == "Apple_Terminal"
+    set <S-F5>=[25~
+endif
+" map <F5> and <S-F5> to jump between locations in a quickfix list, or
+" differences if in window in diff mode
+nnoremap <expr> <silent> <F5>   (&diff ? "]c" : ":cnext\<CR>")
+nnoremap <expr>  <silent> <S-F5> (&diff ? "[c" : ":cprev\<CR>")
+
+""""""""""Bind Function Keys""""""""""
+"F2
+"operations about jump 
+"
+"C-F2
+"max a window(jump to a new tab which only contains current window content)
+
 function ToggleWin()
     if exists("b:originWin")
         execute "tabc"
@@ -233,27 +247,35 @@ function ToggleWin()
         execute "tab split"
     endif
 endfunction
-nnoremap <silent> <F4> :call ToggleWin()<cr>
 
-
-if $TERM_PROGRAM == "Apple_Terminal"
-    set <S-F5>=[25~
+if !empty($WSLENV)
+    set <F22>=[1;5Q
 endif
-" map <F5> and <S-F5> to jump between locations in a quickfix list, or
-" differences if in window in diff mode
-nnoremap <expr> <silent> <F5>   (&diff ? "]c" : ":cnext\<CR>")
-nnoremap <expr>  <silent> <S-F5> (&diff ? "[c" : ":cprev\<CR>")
 
-"pathogen
-"CALL PATHOGEN#infect()
+nnoremap <silent> <F22> :call ToggleWin()<cr>
 
 
-
-"autocmd FileType javascript set makeprg=jsl\ -nologo\ -nofilelisting\ -nosummary\ -nocontext\ -conf\ '/cygwin64/etc/jsl.conf'\ -process\ %
-"autocmd FileType javascript set errorformat=%f(%l):\ %m
+"F4
+"operations about fold
 "
-"
-augroup filefold
-    autocmd! 
-    autocmd Syntax javascript setlocal foldmethod=indent | normal zR
-augroup END 
+"F4
+"fold contents in { .. }
+set foldmethod=manual
+
+"| needs to be transformed by \, <cr> is importatnt to trigger the command"
+function ToggleFold()
+    let l:currentLine = line('.')
+
+    let w:folded = 0
+    execute "folddoclosed let w:folded = 1"
+
+	if w:folded == 0
+        execute "normal vi{\<esc>\<cr>"
+        execute "'<,'>g/{/exe \"if foldclosed(line('.')) == -1 \| normal! f{zf% \| endif\""
+	else
+		normal! zR
+    endif
+
+    execute l:currentLine
+endfunction
+nnoremap <silent> <F4> :call ToggleFold()<cr>
