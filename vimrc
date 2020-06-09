@@ -61,7 +61,7 @@ highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow cter
 "for non current window statusline
 "Differences in User1/User2 with StatusLine overwrites corresponding settings
 "in StatusLineNC
-highlight StatusLineNC ctermfg=white ctermbg=Black cterm=bold guifg=white guibg=black  gui=NONE
+highlight StatusLineNC ctermfg=white ctermbg=grey cterm=bold guifg=white guibg=grey gui=NONE
 
 "for terminal window
 highlight StatusLineTerm ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
