@@ -311,6 +311,14 @@ function ToggleFold()
 endfunction
 nnoremap <silent> <F4> :call ToggleFold()<cr>
 
+"F3
+"operation about format code
+"
+"F3
+"align code according to some letter
+vnoremap <silent> <F3>= :!column -t -s '=' -o '='<cr>
+vnoremap <silent> <F3>: :!column -t -s ':' -o ':'<cr>
+vnoremap <silent> <F3><Space> :!column -t -s ' ' -o ' '<cr>
 
 "********************* make ******************
 augroup makeconfig
