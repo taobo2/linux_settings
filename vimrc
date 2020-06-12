@@ -283,6 +283,7 @@ nnoremap <silent> <F4> :call ToggleFold()<cr>
 
 "********************* make ******************
 augroup makeconfig
+    autocmd!
     autocmd Filetype javascript setlocal makeprg=jshint\ --verbose\ %\\\|grep\ '(E'
     autocmd Filetype javascript setlocal errorformat=%f:\ line\ %l\\,\ col\ %c\\,\ %m
     autocmd BufWritePost *.js silent make | redraw! | if ! empty(getqflist()) | copen | else | cclose | endif
