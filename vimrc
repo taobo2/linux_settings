@@ -187,27 +187,27 @@ augroup statusupdate
 augroup END
 
 
-function OnWinEnter()
-    if exists("t:jumping") && t:jumping
-        unlet t:jumping 
-        if exists("w:jumpmode") && w:jumpmode == "i"
-            startinsert
-        endif
-    endif
-
-    if exists("w:jumpmode")
-        unlet w:jumpmode
-    endif
-endfunction
-
-"toggle between current/last-accessed windows
-tnoremap <silent> <F3> <c-w>:let t:jumping=1<cr><c-w>p
-nnoremap <silent> <F3> :let t:jumping=1<cr><c-w>p
-inoremap <silent> <F3> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
-augroup windowjump
-    autocmd!
-    autocmd WinEnter * :call OnWinEnter()
-augroup END
+"function OnWinEnter()
+"    if exists("t:jumping") && t:jumping
+"        unlet t:jumping 
+"        if exists("w:jumpmode") && w:jumpmode == "i"
+"            startinsert
+"        endif
+"    endif
+"
+"    if exists("w:jumpmode")
+"        unlet w:jumpmode
+"    endif
+"endfunction
+"
+""toggle between current/last-accessed windows
+"tnoremap <silent> <F3> <c-w>:let t:jumping=1<cr><c-w>p
+"nnoremap <silent> <F3> :let t:jumping=1<cr><c-w>p
+"inoremap <silent> <F3> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
+"augroup windowjump
+"    autocmd!
+"    autocmd WinEnter * :call OnWinEnter()
+"augroup END
 
 "toggle between current/last-accessed tabs
 if !exists('g:lasttab')
@@ -248,12 +248,43 @@ function ToggleWin()
     endif
 endfunction
 
-if !empty($WSLENV)
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
     set <F22>=[1;5Q
-endif
+else
+    set <F22>=<C-F2>
+endif 
 
 nnoremap <silent> <F22> :call ToggleWin()<cr>
 
+"S-F2
+"toggle between current/last-accessed windows
+
+function OnWinEnter()
+    if exists("t:jumping") && t:jumping
+        unlet t:jumping 
+        if exists("w:jumpmode") && w:jumpmode == "i"
+            startinsert
+        endif
+    endif
+
+    if exists("w:jumpmode")
+        unlet w:jumpmode
+    endif
+endfunction
+
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <F32>=[1;2Q
+else
+    set <F32>=<S-F2>
+endif 
+
+tnoremap <silent> <F32> <c-w>:let t:jumping=1<cr><c-w>p
+nnoremap <silent> <F32> :let t:jumping=1<cr><c-w>p
+inoremap <silent> <F32> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
+augroup windowjump
+    autocmd!
+    autocmd WinEnter * :call OnWinEnter()
+augroup END
 
 "F4
 "operations about fold
