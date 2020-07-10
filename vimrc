@@ -7,9 +7,6 @@ set fileencoding=utf-8
 set fileencodings=ucs-bom,utf-8,chinese,cp936
 set ruler
 colorscheme koehler
-set tabstop=4
-set shiftwidth=4 "length for (auto)indent
-set expandtab
 "set omnifunc=syntaxcomplete#Complete
 set backspace=2
 set hlsearch
@@ -40,6 +37,10 @@ set guioptions-=r "turn off right scroll bar
 "sesdir means when open the session, set current dir to session file's dir
 set sessionoptions-=curdir
 set sessionoptions+=sesdir
+
+filetype on "auto check file type
+filetype plugin on 
+filetype plugin indent on
 
 
 "expand('%') displays the relative path of the file being edit.
@@ -144,9 +145,6 @@ elseif strlen($TMPDIR) > 0
 else
     call SetBackupdir("/tmp")
 endif
-
-
-filetype plugin indent on
 
 "rename backupfile to contain full path info
 augroup backup
@@ -328,3 +326,14 @@ augroup makeconfig
     autocmd BufWritePost *.js silent make | redraw! | if ! empty(getqflist()) | copen | else | cclose | endif
 augroup END
 
+
+"********************** Indention and tabs *****************
+set tabstop=4 "the length of a tab char
+set softtabstop=4 "affects what happens when you press the <TAB> or <BS> keys. 
+set shiftwidth=4 "affects what happens when you press >>, << or ==. It also affects how automatic indentation works.
+set expandtab
+
+augroup set_indention
+    autocmd!
+    autocmd Filetype javascript setlocal tabstop=2 | setlocal softtabstop=2 | setlocal shiftwidth=2
+augroup END
