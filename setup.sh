@@ -75,20 +75,7 @@ checkComResult 'Set .vimrc' $?
 cp -f $scriptDir/ps.sh $setDir/ps.sh
 
 echo $startLine >> $bashrc
-echo "export HISTFILESIZE=10000" >> $bashrc
-echo 'export HISTIGNORE="rm*:sudo rm*"' >> $bashrc
-echo 'export HISTCONTROL="ignorespace"' >> $bashrc
-echo 'export PATH=$PATH:./' >> $bashrc
-
-echo 'if [[ "$TERM" = *"screen"* ]] || [ ! -z "$VIMRUNTIME" ]; then' >> $bashrc
-echo "  export PS1='\[$(tput setab 6)\]\[$(tput setaf 0)\]\t \u@\h \W $ \[$(tput sgr0)\]'" >> $bashrc
-echo "else"  >> $bashrc
-echo "  export PS1='\[$(tput setab 3)\]\[$(tput setaf 0)\]\t \u@\h \W $ \[$(tput sgr0)\]'" >> $bashrc
-echo "fi" >> $bashrc
-
-echo 'export EDITOR=vim' >> $bashrc
-echo 'export TZ=Asia/Shanghai' >> $bashrc
-#echo "source $setDir/ps.sh" >> $bashrc
+cat './bashrc' >> $bashrc
 echo $endLine >> $bashrc
 checkComResult 'Set .bashrc' $?
 
