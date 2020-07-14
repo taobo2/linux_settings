@@ -81,12 +81,12 @@ function TruncateStr(str, len)
     return '<' . strpart(a:str, strLen - a:len)
 endfunction
 
-function FileName()
-    let currentfile = expand('%')
-    let fileNameLen = strlen(currentfile)
-    let status = TruncateStr(currentfile, winwidth(0)/3)
-    return status
-endfunction
+"function FileName()
+"    let currentfile = expand('%')
+"    let fileNameLen = strlen(currentfile)
+"    let status = TruncateStr(currentfile, winwidth(0)/3)
+"    return status
+"endfunction
 
 function WorkingDir()
     let workingdir = getcwd()
@@ -100,17 +100,6 @@ endfunction
 "set statusline+=\ %1*%.40{getcwd()}%0* "set working directory
 
 "set statusline=%1*%{FileName()}%0*%2*\ %{WorkingDir()}
-"%t means name of the current file
-"set statusline=%1*%t%0*%2*\ %{getcwd()}
-set statusline=%t\ \ %{getcwd()}
-
-"Terminate User2 at the beginning of right-align status, so that User2 
-"can be applied emptiness between this and right-align status.
-"l means current line number; L means max line number.
-"set statusline+=%=%0*%1*%P%0*%2*[%l\ %c]%0*
-set statusline+=%=\ \ %P[%l\ %c]%m
-"statusline shouldnot contain spaces, if spaces are required, a \ should
-"before the space
 "
 "add current split window index
 "set statusline+=%1*win\ %{winnr()}%0* 
@@ -337,3 +326,37 @@ augroup set_indention
     autocmd!
     autocmd Filetype javascript setlocal tabstop=2 | setlocal softtabstop=2 | setlocal shiftwidth=2
 augroup END
+
+"********************** set status bar *****************
+function FileName()
+    let infoes = systemlist('svn info ' . expand('%'))
+
+    if v:shell_error == 1
+        return expand('%:t') "t means tail, which is filename
+    endif
+
+    return strpart(infoes[4], stridx(infoes[4], '^'))
+endfunction
+
+function StatusLeftPart()
+    let name = FileName()
+    if len(name) + 30 > winwidth(0)
+        return strpart(name, 0, winwidth(0) - 30 - 4 - len(expand('%:t'))) . '.../' . expand('%:t')
+    elseif len(name) + len(getcwd()) + 30 > winwidth(0) 
+        return name
+    endif
+
+    return name . '  ' . getcwd()
+endfunction
+
+"%t means name of the current file
+"set statusline=%1*%t%0*%2*\ %{getcwd()}
+set statusline=%{StatusLeftPart()}
+
+"Terminate User2 at the beginning of right-align status, so that User2 
+"can be applied emptiness between this and right-align status.
+"l means current line number; L means max line number.
+"set statusline+=%=%0*%1*%P%0*%2*[%l\ %c]%0*
+set statusline+=%=\ \ %P[%l\ %c]%m
+"statusline shouldnot contain spaces, if spaces are required, a \ should
+"before the space
