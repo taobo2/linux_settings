@@ -1,8 +1,20 @@
 currentDir(){
     if svn info > /dev/null 2>&1; then
-        echo $(svn info 2>/dev/null | grep 'Relative URL' | cut -d: -f2)
+        format $(svn info 2>/dev/null | grep 'Relative URL' | cut -d: -f2)
     else
         echo "${PWD##*/}"
+    fi
+}
+
+format(){
+    shrink ${1%/*} ${1##*/}
+}
+
+shrink(){ 
+    if [ ${#1} -lt $(($(tput cols)/3)) ]; then
+        echo $1":"$2
+    else
+        shrink ${1%/*} $2
     fi
 }
 
