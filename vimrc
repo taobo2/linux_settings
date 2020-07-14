@@ -338,8 +338,14 @@ function FileName()
     return strpart(infoes[4], stridx(infoes[4], '^'))
 endfunction
 
+let g:statusFileNames = {}
+
 function StatusLeftPart()
-    let name = FileName()
+    if !has_key(g:statusFileNames, expand('%:p'))
+        let g:statusFileNames[expand('%:p')] = FileName() "cache, FileName is slow
+    endif
+    
+    let name = g:statusFileNames[expand('%:p')]
     if len(name) + 30 > winwidth(0)
         return strpart(name, 0, winwidth(0) - 30 - 4 - len(expand('%:t'))) . '.../' . expand('%:t')
     elseif len(name) + len(getcwd()) + 30 > winwidth(0) 
@@ -360,3 +366,9 @@ set statusline=%{StatusLeftPart()}
 set statusline+=%=\ \ %P[%l\ %c]%m
 "statusline shouldnot contain spaces, if spaces are required, a \ should
 "before the space
+
+augroup statusBar
+    autocmd!
+    autocmd BufRead * silent! unlet g:statusFileNames[expand('%:p')]
+    autocmd BufDelete * silent! unlet g:statusFileNames[expand('%:p')]
+augroup end
