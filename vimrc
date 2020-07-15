@@ -219,7 +219,7 @@ nnoremap <expr>  <silent> <S-F5> (&diff ? "[c" : ":cprev\<CR>")
 
 """"""""""Bind Function Keys""""""""""
 "F2
-"operations about jump 
+"**************************** operations about jump ******************
 "
 "C-F2
 "max a window(jump to a new tab which only contains current window content)
@@ -273,8 +273,13 @@ augroup windowjump
     autocmd WinEnter * :call OnWinEnter()
 augroup END
 
+augroup navigateCode 
+    autocmd!
+    autocmd Filetype javascript setlocal suffixesadd=.js "for gf
+augroup END
+
 "F4
-"operations about fold
+"*********************** operations about fold ******************
 "
 "F4
 "fold contents in { .. }
