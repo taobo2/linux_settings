@@ -369,6 +369,11 @@ set statusline+=%=\ \ %P[%l\ %c]%m
 
 augroup statusBar
     autocmd!
-    autocmd BufRead * silent! unlet g:statusFileNames[expand('%:p')]
+    autocmd BufReadPre * silent! unlet g:statusFileNames[expand('%:p')]
     autocmd BufDelete * silent! unlet g:statusFileNames[expand('%:p')]
+    autocmd InsertEnter * lcd %:h
+    autocmd InsertLeave * lcd -
 augroup end
+
+
+
