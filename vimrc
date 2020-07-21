@@ -376,9 +376,128 @@ augroup statusBar
     autocmd!
     autocmd BufReadPre * silent! unlet g:statusFileNames[expand('%:p')]
     autocmd BufDelete * silent! unlet g:statusFileNames[expand('%:p')]
-    autocmd InsertEnter * lcd %:h
-    autocmd InsertLeave * lcd -
+    autocmd InsertEnter * silent! lcd %:h    " when new empty file, there are errors to silent
+    autocmd InsertLeave * silent! lcd -
 augroup end
 
 
 
+"********************** Layout *****************
+function CreateRecentWindow()
+    if !exists("t:layoutType") || t:layoutType != 'RECENT_LAYOUT'
+        let buffers = tabpagebuflist()->filter('index(t:visitBufList, v:val)<0') + t:visitBufList
+        exe "tabnew %" 
+        let t:visitBufList = buffers
+        let t:layoutType = 'RECENT_LAYOUT'
+    endif
+
+    let winNr = winnr()
+
+    if winnr('$') % (&columns / 80) == 0
+        exe "noautocmd botright split"
+    else
+        exe "noautocmd ". winnr('$') . "wincmd w"
+        exe "noautocmd vsplit"
+    endif
+    
+    exe "noautocmd ". winNr ."wincmd w"
+
+    call UpdateRecentLayout()
+endfunction
+
+function DeleteRencentWindow()
+    if gettabvar(tabpagenr(), 'layoutType', '') != 'RECENT_LAYOUT'
+        return
+    endif
+    let winNr = winnr()
+
+    exe "noautocmd ". winnr('$') . "wincmd w"
+    exe "noautocmd close"
+
+    exe "noautocmd ". winNr ."wincmd w"
+
+    call UpdateRecentLayout()
+endfunction
+
+function RecordBufVisit()
+    if gettabvar(tabpagenr(), 'lastWindowNr', winnr('$')) > winnr('$')
+        call remove(t:visitBufList, t:visitBufList->index(t:lastBuf)) "a buffer is being deleted
+    endif
+
+    let existIdx = index(t:visitBufList, bufnr('%'))
+    if existIdx > -1
+        call remove(t:visitBufList, existIdx) "If a function is used alone, prefix it with call. It is to distinguish with ex-command introduced by vi and ed
+    endif
+
+    call add(t:visitBufList, bufnr('%'))
+    
+    if !exists("t:layoutType") || t:layoutType != 'RECENT_LAYOUT'
+        return
+    endif
+
+    call UpdateRecentLayout()
+endfunction
+
+function UpdateRecentLayout()
+    let t:visitBufList = t:visitBufList->filter("win_findbuf(v:val)->len()>0")
+    let buf2Open = Buf2Open()
+
+    let winNr = winnr()
+
+
+    "let t:ignoreBufEnter = 1
+    for buf in buf2Open
+        exe 'noautocmd ' . WinNr2Replace() . 'wincmd w'
+        exe 'noautocmd b' . buf
+    endfor
+    "unlet t:ignoreBufEnter 
+    exe "noautocmd ". winNr . "wincmd w"
+endfunction
+
+function Buf2Open()
+    return t:visitBufList[ max([-len(t:visitBufList), -winnr('$')]):-1 ]
+                \->filter('tabpagebuflist()->index(v:val) < 0')
+                \->reverse()
+endfunction
+
+function WinNr2Replace()
+
+    let wins = range(1, winnr('$'))->sort("RecentVisitLast")
+
+    return wins[0]
+endfunction
+
+function RecentVisitLast(a, b)
+    if winnr() == a:a
+        return 1
+    elseif winnr() == a:b
+        return -1
+    endif
+
+    if winbufnr(a:a) == winbufnr(a:b)
+        return a:b - a:a
+    endif
+
+    let aIsEdit = winbufnr(winnr()) == winbufnr(a:a)
+    let aRepeat = aIsEdit || range(1, a:a - 1)->map('winbufnr(v:val)')->index(winbufnr(a:a)) >= 0
+    let bIsEdit = winbufnr(winnr()) == winbufnr(a:b)
+    let bRepeat = bIsEdit || range(1, a:b - 1)->map('winbufnr(v:val)')->index(winbufnr(a:b)) >= 0
+    if aRepeat != bRepeat
+        return bRepeat - aRepeat
+    endif
+
+    let result = index(t:visitBufList, winbufnr(a:a)) - index(t:visitBufList, winbufnr(a:b))
+    return result
+endfunction
+
+nnoremap <F6> :call CreateRecentWindow()<cr>
+nnoremap <S-F6> :call DeleteRencentWindow()<cr>
+
+let t:visitBufList = []
+
+augroup recentLayout
+    autocmd!
+    autocmd TabNew * let t:visitBufList = [] 
+    autocmd BufEnter *  if !exists('t:ignoreBufEnter') | call RecordBufVisit() | endif
+    autocmd BufLeave * if gettabvar(tabpagenr(), 'layoutType', '') == 'RECENT_LAYOUT' | let t:lastBuf = bufnr() | let t:lastWindowNr = winnr('$') | endif
+augroup end
