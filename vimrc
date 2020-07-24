@@ -382,13 +382,13 @@ augroup end
 
 
 
-"********************** Layout *****************
+"********************** Recent Tabs *****************
 function CreateRecentWindow()
-    if !exists("t:recentTab") || t:recentTab != 1
-        let buffers = tabpagebuflist()->filter('index(g:recentTab_visitBufList, v:val)<0') + g:recentTab_visitBufList
+    if !exists("t:recentBufs") || t:recentBufs != 1
+        let buffers = tabpagebuflist()->filter('index(g:recentBufs_visitBufList, v:val)<0') + g:recentBufs_visitBufList
         exe "tabnew %" 
-        let g:recentTab_visitBufList = buffers
-        let t:recentTab = 1
+        let g:recentBufs_visitBufList = buffers
+        let t:recentBufs = 1
     endif
 
     let winNr = winnr()
@@ -406,7 +406,7 @@ function CreateRecentWindow()
 endfunction
 
 function DeleteRencentWindow()
-    if gettabvar(tabpagenr(), 'recentTab', '') != 1
+    if gettabvar(tabpagenr(), 'recentBufs', '') != 1
         return
     endif
     let winNr = winnr()
@@ -420,12 +420,12 @@ function DeleteRencentWindow()
 endfunction
 
 function RecordBufVisit()
-    let existIdx = index(g:recentTab_visitBufList, bufnr('%'))
+    let existIdx = index(g:recentBufs_visitBufList, bufnr('%'))
     if existIdx > -1
-        call remove(g:recentTab_visitBufList, existIdx) "If a function is used alone, prefix it with call. It is to distinguish with ex-command introduced by vi and ed
+        call remove(g:recentBufs_visitBufList, existIdx) "If a function is used alone, prefix it with call. It is to distinguish with ex-command introduced by vi and ed
     endif
 
-    call add(g:recentTab_visitBufList, bufnr('%'))
+    call add(g:recentBufs_visitBufList, bufnr('%'))
 endfunction
 
 function UpdateRecentLayout()
@@ -442,7 +442,7 @@ function UpdateRecentLayout()
 endfunction
 
 function Buf2Open()
-    return g:recentTab_visitBufList[ max([-len(g:recentTab_visitBufList), -winnr('$')]):-1 ]
+    return g:recentBufs_visitBufList[ max([-len(g:recentBufs_visitBufList), -winnr('$')]):-1 ]
                 \->filter('tabpagebuflist()->index(v:val) < 0')
                 \->reverse()
 endfunction
@@ -473,26 +473,26 @@ function RecentVisitLast(a, b)
         return bRepeat - aRepeat
     endif
 
-    let result = index(g:recentTab_visitBufList, winbufnr(a:a)) - index(g:recentTab_visitBufList, winbufnr(a:b))
+    let result = index(g:recentBufs_visitBufList, winbufnr(a:a)) - index(g:recentBufs_visitBufList, winbufnr(a:b))
     return result
 endfunction
 
 function RemoveDeleteBuf(buf)
-    return g:recentTab_visitBufList->filter('v:val!=' . a:buf)
+    return g:recentBufs_visitBufList->filter('v:val!=' . a:buf)
 endfunction
 
 nnoremap <F6> :call CreateRecentWindow()<cr>
 nnoremap <S-F6> :call DeleteRencentWindow()<cr>
 
-let g:recentTab_visitBufList = []
+let g:recentBufs_visitBufList = []
 
-augroup recentTabGroup
+augroup recentBufsGroup
     autocmd!
 
     autocmd BufEnter *  call RecordBufVisit() 
 
     "Called when a buffer is shown in a window
-    autocmd BufWinEnter *  call RecordBufVisit() | if gettabvar(tabpagenr(), 'recentTab', '') == 1 | call UpdateRecentLayout() | endif
+    autocmd BufWinEnter *  call RecordBufVisit() | if gettabvar(tabpagenr(), 'recentBufs', '') == 1 | call UpdateRecentLayout() | endif
 
     autocmd BufDelete * call RemoveDeleteBuf(expand('<abuf>'))
 
