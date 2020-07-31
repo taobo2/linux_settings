@@ -56,20 +56,20 @@ filetype plugin indent on
 " ctermfg is the front color for terminal vim.
 " cterm is for the terminal with color; bold atrribute may be removed by
 " ctermfg in some terminal, put it at the end
-highlight StatusLine ctermfg=Black ctermbg=yellow guifg=Black guibg=yellow cterm=bold 
-highlight User1 ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow cterm=bold gui=bold
-highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow cterm=bold gui=bold
+"highlight StatusLine ctermfg=Black ctermbg=yellow guifg=Black guibg=yellow cterm=bold 
+"highlight User1 ctermfg=DarkRed guifg=DarkRed ctermbg=yellow guibg=yellow cterm=bold gui=bold
+"highlight User2 ctermfg=darkblue guifg=darkblue ctermbg=yellow guibg=yellow cterm=bold gui=bold
 "for non current window statusline
 "Differences in User1/User2 with StatusLine overwrites corresponding settings
 "in StatusLineNC
-highlight StatusLineNC ctermfg=white ctermbg=grey cterm=bold guifg=white guibg=grey gui=NONE
+"highlight StatusLineNC ctermfg=white ctermbg=grey cterm=bold guifg=white guibg=grey gui=NONE
 
 "for terminal window
-highlight StatusLineTerm ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
-highlight StatusLineTermNC ctermbg=240 cterm=bold 
+"highlight StatusLineTerm ctermfg=Black ctermbg=yellow guibg=yellow cterm=bold 
+"highlight StatusLineTermNC ctermbg=240 cterm=bold 
 
 "for wildmenu
-highlight WildMenu ctermfg=White ctermbg=Black
+"highlight WildMenu ctermfg=White ctermbg=Black
 
 "set statusline+=%t\ %1*in%0*\ %.10{fnamemodify(expand('%'),':h')}
 ".80 means the max length of %F (full path), truncate if needed
@@ -360,6 +360,8 @@ function StatusLeftPart()
     return name . '  ' . getcwd()
 endfunction
 
+highlight StatusLine cterm=bold ctermfg=240 ctermbg=81
+highlight StatusLineNC cterm=bold ctermfg=white ctermbg=240
 "%t means name of the current file
 "set statusline=%1*%t%0*%2*\ %{getcwd()}
 set statusline=%{StatusLeftPart()}
