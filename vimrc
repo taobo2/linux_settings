@@ -497,3 +497,93 @@ augroup recentBufsGroup
     autocmd BufDelete * call RemoveDeleteBuf(expand('<abuf>'))
 
 augroup end
+
+"====================== Jdb ========================
+"
+function Jdb()
+    call term_start('jdb -sourcepath /tmp/ -classpath /tmp/ db.Test', { 'out_cb' : function('Output') })
+endfunction
+
+function Jdb1()
+    call term_start('jdb -sourcepath /tmp/ -classpath /tmp/ Add', { 'out_io' : 'buffer', 'out_name' : 'mybuffer' })
+endfunction
+
+let g:lastCursorRow = 0
+let g:lastCommand = ''
+let g:executeCommand = ''
+let g:inWhereOutput = 0
+function Output(chan, msg)
+    "echom '=========================================================='
+    "echom 'msg ' . a:msg
+    "echom 'last char ' . char2nr(a:msg[len(a:msg) - 1])
+    "echom 'second last char ' . char2nr(a:msg[len(a:msg) - 2])
+    "let lines = split(get(g:, 'joutput', '') . a:msg, '\(\r\n\)\|\n')
+    "if len(lines) ==  1 &&  a:msg[len(a:msg) -1 ] != "\n" && a:msg[len(a:msg) - 1] != "\r"
+    "    let g:joutput = lines[0]
+    "else
+    "    for line in lines
+
+    "        let jWord = '[^ .(]\+'
+    "        let jClass = '\(\(' . jWord . '\.\)*'. jWord . '\)'
+    "        let jMethod = '[^.(]\+()'
+    "        let lineRegex = 'line=\(\d\+\)'
+    "        let tail = 'bci='
+    "        let hitPattern =  jClass . '\.' . jMethod . ',\s\+' . lineRegex . '\s\+' . tail
+    "        let hitMatched = matchlist(line, hitPattern)
+    "        if len(hitMatched)>0
+    "            echom hitMatched
+    "        endif
+
+    "        "let wherePattern = '\[1\]\s\+' . jClass . '\.' . jMethod . '\s\+(\([^:]\+\):\(\d\+\))'
+    "        let wherePattern = '\[1\]\s\+' . jClass . '\.' . jWord . '\s\+(\([^:]\+\):\(\d\+\)'
+    "        let whereMatched = matchlist(line, wherePattern)
+    "        if len(whereMatched) > 0
+    "            echom whereMatched
+    "        endif
+    "    endfor
+    "    let g:joutput = ''
+    "endif
+    let prompt = '\(>\|[^[ ]\+\[\d\+\]\)'
+    let promptReg = '^' . prompt . '\(\s' . prompt . '\)*'
+
+    for row in range(g:lastCursorRow + 1, term_getcursor(2)[0] - 1 + term_getscrolled(2))
+        let g:lastCursorRow = row 
+        if term_getcursor(2)[0] - row < term_getsize(2)[0] 
+            let l = term_getline(2, row - term_getscrolled(2)) "can only get last term_size rows
+        else
+            let l = getbufline(2, row) "cursor row may not be in buffer at this time
+        endif
+
+        let jWord = '[^ .(]\+'
+        let jClass = '\(\(' . jWord . '\.\)*'. jWord . '\)'
+        let jMethod = '[^.(]\+()'
+        let lineRegex = 'line=\(\d\+\)'
+        let tail = 'bci='
+        let hitPattern =  jClass . '\.' . jMethod . ',\s\+' . lineRegex . '\s\+' . tail
+        let hitMatched = matchlist(l, hitPattern)
+        if len(hitMatched)>0
+            echom hitMatched
+        endif
+
+        let wherePattern = '\[\d\+\]\s\+' . jClass . '\.' . jWord . '\s\+(\([^:]\+\):\(\d\+\)'
+        let whereMatched = matchlist(l, wherePattern)
+        if len(whereMatched) > 0 
+            if !g:inWhereOutput 
+                let g:inWhereOutput = 1
+                echom whereMatched
+            endif
+        else
+            let g:inWhereOutput = 0
+        endif
+    endfor
+    if term_getline(2, '.') =~ promptReg . '\s*$' 
+        echom 'wait for input...'
+        if g:executeCommand == ''
+            let executeCommand = g:executeCommand
+            let g:executeCommand = ''
+            "call term_sendkeys(2, executeCommand)
+        endif
+    endif
+
+endfunction
+
