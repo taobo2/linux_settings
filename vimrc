@@ -362,6 +362,7 @@ endfunction
 
 highlight StatusLine cterm=bold ctermfg=240 ctermbg=81
 highlight StatusLineNC cterm=bold ctermfg=white ctermbg=240
+highlight StatusLineTermNC cterm=bold ctermfg=white ctermbg=240
 "%t means name of the current file
 "set statusline=%1*%t%0*%2*\ %{getcwd()}
 set statusline=%{StatusLeftPart()}
