@@ -503,7 +503,8 @@ augroup end
 "====================== Jdb ========================
 "
 function Jdb()
-    call term_start('jdb -sourcepath /tmp/ -classpath /tmp/ db.Test', { 'out_cb' : function('Output') })
+    tabnew /tmp/db/Test.java
+    let g:javacBuf = term_start('javac -g /tmp/db/Test.java', { 'term_name' : 'javac db.Test', 'exit_cb' : 'JavacExit' })
 endfunction
 
 function Jdb1()
@@ -514,49 +515,44 @@ let g:lastCursorRow = 0
 let g:lastCommand = ''
 let g:executeCommand = ''
 let g:inWhereOutput = 0
+let g:jdbBuf = 0
+let g:javacBuf = 0
+let g:jWord = '[^ .(;]\+'
+let g:package = 'package'
+let g:packagePart = '\(' . jWord . '\|\.\)'
+let g:oneLineComment = '//.*'
+let g:mlCommentHead = '/\*'
+let g:mlCommentTail = '.\{-}\*/'
+let g:colon = ';'
+
+function JavacExit(job, status)
+    if a:status 
+        return
+    endif
+    
+    let winnr = range(1, winnr('$'))->map('winbufnr(v:val)')->index(g:javacBuf) + 1
+    exe 'noautocmd ' . winnr . 'wincmd c'
+    
+    call term_start('java -agentlib:jdwp=transport=dt_socket,address=8000,server=y -classpath /tmp/ db.Test', { 'term_name' : 'db.Test' })
+    sleep 2
+    let g:jdbBuf = term_start('jdb -sourcepath /tmp/ -attach 8000', { 'term_name' : 'JDB', 'out_cb' : function('Output') })
+endfunction
+
 function Output(chan, msg)
     "echom '=========================================================='
     "echom 'msg ' . a:msg
-    "echom 'last char ' . char2nr(a:msg[len(a:msg) - 1])
-    "echom 'second last char ' . char2nr(a:msg[len(a:msg) - 2])
-    "let lines = split(get(g:, 'joutput', '') . a:msg, '\(\r\n\)\|\n')
-    "if len(lines) ==  1 &&  a:msg[len(a:msg) -1 ] != "\n" && a:msg[len(a:msg) - 1] != "\r"
-    "    let g:joutput = lines[0]
-    "else
-    "    for line in lines
-
-    "        let jWord = '[^ .(]\+'
-    "        let jClass = '\(\(' . jWord . '\.\)*'. jWord . '\)'
-    "        let jMethod = '[^.(]\+()'
-    "        let lineRegex = 'line=\(\d\+\)'
-    "        let tail = 'bci='
-    "        let hitPattern =  jClass . '\.' . jMethod . ',\s\+' . lineRegex . '\s\+' . tail
-    "        let hitMatched = matchlist(line, hitPattern)
-    "        if len(hitMatched)>0
-    "            echom hitMatched
-    "        endif
-
-    "        "let wherePattern = '\[1\]\s\+' . jClass . '\.' . jMethod . '\s\+(\([^:]\+\):\(\d\+\))'
-    "        let wherePattern = '\[1\]\s\+' . jClass . '\.' . jWord . '\s\+(\([^:]\+\):\(\d\+\)'
-    "        let whereMatched = matchlist(line, wherePattern)
-    "        if len(whereMatched) > 0
-    "            echom whereMatched
-    "        endif
-    "    endfor
-    "    let g:joutput = ''
-    "endif
     let prompt = '\(>\|[^[ ]\+\[\d\+\]\)'
     let promptReg = '^' . prompt . '\(\s' . prompt . '\)*'
 
-    for row in range(g:lastCursorRow + 1, term_getcursor(2)[0] - 1 + term_getscrolled(2))
+    for row in range(g:lastCursorRow + 1, term_getcursor(g:jdbBuf)[0] - 1 + term_getscrolled(g:jdbBuf))
         let g:lastCursorRow = row 
-        if term_getcursor(2)[0] - row < term_getsize(2)[0] 
-            let l = term_getline(2, row - term_getscrolled(2)) "can only get last term_size rows
+        if term_getcursor(g:jdbBuf)[0] - row < term_getsize(g:jdbBuf)[0] 
+            let l = term_getline(g:jdbBuf, row - term_getscrolled(g:jdbBuf)) "can only get last term_size rows
         else
-            let l = getbufline(2, row) "cursor row may not be in buffer at this time
+            let l = getbufline(g:jdbBuf, row) "cursor row may not be in buffer at this time
         endif
 
-        let jWord = '[^ .(]\+'
+        let jWord = g:jWord
         let jClass = '\(\(' . jWord . '\.\)*'. jWord . '\)'
         let jMethod = '[^.(]\+()'
         let lineRegex = 'line=\(\d\+\)'
@@ -578,14 +574,78 @@ function Output(chan, msg)
             let g:inWhereOutput = 0
         endif
     endfor
-    if term_getline(2, '.') =~ promptReg . '\s*$' 
+    if term_getline(g:jdbBuf, '.') =~ promptReg . '\s*$' 
         echom 'wait for input...'
         if g:executeCommand == ''
             let executeCommand = g:executeCommand
             let g:executeCommand = ''
-            "call term_sendkeys(2, executeCommand)
+            "call term_sendkeys(g:jdbBuf, executeCommand)
         endif
     endif
 
 endfunction
 
+function Package(...)
+    let buf = get(a:, 1, bufnr())
+    if bufname(buf) !~ '\.java$'
+        return -1
+    endif
+    
+    let lines = getbufline(buf, 1, '$')
+    let row = 0
+    let package = ''
+    while row < len(lines)
+        let col = 0
+        while col < len(lines[row])
+            if matchlist(lines[row], '^' . g:mlCommentHead, col)->len() > 0
+                let [row, col] = ProcessMultLineComment(lines, row, col + 2)
+            elseif matchlist(lines[row], '^' . g:oneLineComment, col)->len() > 0 
+                break
+            elseif matchlist(lines[row], '^' . g:package, col)->len() > 0
+                let col = col + 7
+            elseif matchlist(lines[row], '^' . g:packagePart, col)->len() > 0
+                let matchResult = matchlist(lines[row], g:packagePart, col)
+                let package = package . matchResult[0]
+                let col = col + len(matchResult[0])
+            elseif matchlist(lines[row], '^' . g:colon, col)->len() > 0
+                let row = len(lines)
+                break
+            else
+                let col = col + 1
+            endif
+        endwhile
+        let row = row + 1
+    endwhile
+    return package
+endfunction
+
+function ProcessMultLineComment(lines, row, col)
+    let singleLineMatch = matchlist(a:lines[a:row], '^'.g:mlCommentTail, a:col)
+    if len(singleLineMatch) > 0
+        return [a:row, a:col + len(singleLineMatch[0])]
+    endif
+    
+    let row = a:row + 1
+    while row < len(a:lines)
+        let matchResult = matchlist(a:lines[row], g:mlCommentTail)
+        if len(matchResult) > 0
+            return [row, matchResult[0]->len()]
+        else
+            let row = row + 1
+        endif
+    endwhile
+endfunction
+
+function FindBetween(list, startReg, endReg)
+    let startMatches = range(0, len(list) - 1)->filter('list[v:val]=~startReg')
+    if len(startMatches) == 0
+        return ''
+    endif
+
+    let endMatches = range(startMatches[0], len(list) - 1)->filter('list[v:val]=~endReg')
+    if len(endMatches) == 0
+        return ''
+    endif
+
+    return list[startMatches[0]:endMatches[0]]
+endfunction
