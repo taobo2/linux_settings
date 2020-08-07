@@ -534,7 +534,7 @@ function JavacExit(job, status)
     let winnr = range(1, winnr('$'))->map('winbufnr(v:val)')->index(g:javacBuf) + 1
     exe 'noautocmd ' . winnr . 'wincmd c'
     
-    call term_start('java -agentlib:jdwp=transport=dt_socket,address=8000,server=y -classpath /tmp/ db.Test', { 'term_name' : 'db.Test' })
+    let g:javaBuf = term_start('java -agentlib:jdwp=transport=dt_socket,address=8000,server=y -classpath /tmp/ db.Test', { 'term_name' : 'db.Test' })
     sleep 2
     let g:jdbBuf = term_start('jdb -sourcepath /tmp/ -attach 8000', { 'term_name' : 'JDB', 'out_cb' : function('Output') })
 endfunction
@@ -562,6 +562,7 @@ function Output(chan, msg)
         let hitMatched = matchlist(l, hitPattern)
         if len(hitMatched)>0
             echom hitMatched
+            call ChangeCurrentLine(hitMatched[3])
         endif
 
         let wherePattern = '\[\d\+\]\s\+' . jClass . '\.' . jWord . '\s\+(\([^:]\+\):\(\d\+\)'
@@ -570,6 +571,7 @@ function Output(chan, msg)
             if !g:inWhereOutput 
                 let g:inWhereOutput = 1
                 echom whereMatched
+                call ChangeCurrentLine(whereMatched[4])
             endif
         else
             let g:inWhereOutput = 0
@@ -583,7 +585,14 @@ function Output(chan, msg)
             "call term_sendkeys(g:jdbBuf, executeCommand)
         endif
     endif
+endfunction
 
+function ChangeCurrentLine(line)
+    let curWin = winnr()
+    let srcWin = range(1, winnr('$'))->filter('winbufnr(v:val)!=g:jdbBuf && winbufnr(v:val)!=g:javaBuf')[0]
+    exec srcWin.'wincmd w '
+    call cursor(a:line, 1)
+    exec curWin.'wincmd w'
 endfunction
 
 function Package(...)
@@ -594,7 +603,6 @@ function Package(...)
     
     let lines = getbufline(buf, 1, '$')
     let row = 0
-    let package = ''
     while row < len(lines)
         let col = 0
         while col < len(lines[row])
@@ -604,10 +612,7 @@ function Package(...)
                 break
             elseif matchlist(lines[row], '^' . g:package, col)->len() > 0
                 let col = col + 7
-            elseif matchlist(lines[row], '^' . g:packagePart, col)->len() > 0
-                let matchResult = matchlist(lines[row], g:packagePart, col)
-                let package = package . matchResult[0]
-                let col = col + len(matchResult[0])
+                return ProcessPackageDeclaration(lines, row, col)
             elseif matchlist(lines[row], '^' . g:colon, col)->len() > 0
                 let row = len(lines)
                 break
@@ -617,7 +622,7 @@ function Package(...)
         endwhile
         let row = row + 1
     endwhile
-    return package
+    return ''
 endfunction
 
 function ProcessMultLineComment(lines, row, col)
@@ -637,16 +642,47 @@ function ProcessMultLineComment(lines, row, col)
     endwhile
 endfunction
 
-function FindBetween(list, startReg, endReg)
-    let startMatches = range(0, len(list) - 1)->filter('list[v:val]=~startReg')
-    if len(startMatches) == 0
-        return ''
-    endif
+function ProcessPackageDeclaration(lines, row, col)
+    let row = a:row
+    let package = ''
+    while row < len(a:lines)
 
-    let endMatches = range(startMatches[0], len(list) - 1)->filter('list[v:val]=~endReg')
-    if len(endMatches) == 0
-        return ''
-    endif
+        if row == a:row
+            let col = a:col
+        else
+            let col = 0
+        endif
 
-    return list[startMatches[0]:endMatches[0]]
+        while col < len(a:lines[row])
+            if matchlist(a:lines[row], '^' . g:mlCommentHead, col)->len() > 0
+                let [row, col] = ProcessMultLineComment(a:lines, row, col + 2)
+            elseif matchlist(a:lines[row], '^' . g:oneLineComment, col)->len() > 0 
+                break
+            elseif matchlist(a:lines[row], '^' . g:packagePart, col)->len() > 0
+                let matchResult = matchlist(a:lines[row], g:packagePart, col)
+                let package = package . matchResult[0]
+                let col = col + len(matchResult[0])
+            elseif matchlist(a:lines[row], '^' . g:colon, col)->len() > 0
+                return package
+            else
+                let col = col + 1
+            endif
+        endwhile
+        let row = row + 1
+    endwhile
+endfunction
+
+function SetBreakpoint(...)
+    let buf = get(a:, 1, bufnr())
+    let line = get(a:, 2, line("."))
+
+    let package = Package(buf)
+    if package == -1
+        echom 'Not a java file'
+        return
+    endif
+    
+    let file = bufname(buf)->fnamemodify(':t:r')
+
+    call term_sendkeys(g:jdbBuf, 'stop at '.package.'.'.file.':'.line."\<cr>")
 endfunction
