@@ -33,24 +33,14 @@ function! s:JavacExit(job, status)
     let t:jdbBuf = term_start('jdb -sourcepath /tmp/ -attach 8000', { 'term_name' : 'JDB', 'out_cb' : function('s:Output') })
 endfunction
 
-function! s:MatchOutput(lines, currentStat, stats)
-    if !empty(a:currentStat)
-        let row = s:MatchLines(a:lines, 0, a:currentStat)
-        if s:isMatching(a:currentStat)
-            return a:currentStat
-        endif
-    else
-        let row = 0
-    endif
-
+function! s:MatchOutput(lines, stats)
+    let row = 0
     while row < a:lines.len()
         let beforeRow = row
 
         for s in a:stats
             let row = s:MatchLines(a:lines, row, s)
-            if s:isMatching(s)
-                return s
-            elseif s:isMatchSucceed(s)
+            if s:isMatchSucceed(s)
                 break
             endif
         endfor
@@ -65,6 +55,7 @@ function! s:MatchLines(lines, start, stat)
     let row = a:start
     while row < a:lines.len()
         let line = a:lines.get(row)
+        echom 'match lines '. line
         let matchToCol = a:stat.match(line)
         if s:isMatchSucceed(a:stat)
             if exists('a:stat.onSucceed')
@@ -83,6 +74,14 @@ function! s:MatchLines(lines, start, stat)
         endif
         let row = row + 1
     endwhile
+
+    if s:isMatching(a:stat)
+        if exists('a:stat.onFail')
+            call a:stat.onFail()
+        endif
+        return a:start
+    endif
+
     return row
 endfunction
 
@@ -96,10 +95,24 @@ function s:newLines(start, end)
         return s:GetOutputLine(a:row + a:start)
     endfunction
 
+    function! lines.toString()
+        let list = []
+        let row = 0
+        while row < self.len()
+            call add(list, self.get(row))
+            let row = row + 1
+        endwhile
+        return string(list)
+    endfunction
+
     return lines
 endfunction
 
 function! s:Output(chan, msg)
+    let promptReg = '^' . s:prompt . '\(\s' . s:prompt . '\)*'
+    if term_getline(t:jdbBuf, '.') !~ promptReg . '\s*$' 
+        return
+    endif
     if exists('t:lastCursorRow')
         let start = t:lastCursorRow + 1
     else
@@ -107,35 +120,55 @@ function! s:Output(chan, msg)
     endif
 
     let end = term_getcursor(t:jdbBuf)[0] - 1 + term_getscrolled(t:jdbBuf)
+    echom "===================== Output:". start . "," . end." =================="
     let lines = s:newLines(start, end)
-    let stats = [s:newStopStat(function('s:ProcessStop')), s:newWhereStat()]
-    let t:currentStat = s:MatchOutput(lines, get(t:, 'currentStat', {}), stats)
+    if exists('t:executionMatch')
+        let stats = [ t:executionMatch, s:newStopStat(function('s:ProcessStop')), s:newWhereStat()]
+        unlet t:executionMatch
+    else
+        let stats = [ s:newStopStat(function('s:ProcessStop')), s:newWhereStat()]
+    endif
 
-    let promptReg = '^' . s:prompt . '\(\s' . s:prompt . '\)*'
-    if term_getline(t:jdbBuf, '.') =~ promptReg . '\s*$' && empty(t:currentStat)
-        if !empty(get(t:, 'execution', {}))
-            let executeCommand = t:execution.command . "\<cr>"
-            let t:currentStat = get(t:execution, 'matchStat', {})
-            let t:execution = {}
-            call term_sendkeys(t:jdbBuf, executeCommand)
+    call s:MatchOutput(lines, stats)
+
+    "echom "============================================================"
+    "echom lines.toString()
+    "echom term_getline(t:jdbBuf, '.')
+    "echom string(t:executionMatch)
+    "echom "============================================================"
+    if !empty(get(t:, 'execution', {}))
+        let executeCommand = t:execution.command . "\<cr>"
+        if exists('t:execution.matchStat')
+            let t:executionMatch = t:execution.matchStat
         endif
+        let t:execution = {}
+        call term_sendkeys(t:jdbBuf, executeCommand)
     endif
 
     let t:lastCursorRow = end
 endfunction
 
 function! s:newConditionStat(conditionStr, outClass, line)
-    let progresses = [ { 'type' : 'consume', 'consume' : conditionStr } ]
-    let stat = { 'progresses' : progresses }
+    let progresses = [ { 'type' : 'consume', 'consume' : a:conditionStr } ]
+    let stat = { 'progresses' : progresses , 'meetSucceed' : 0 }
+
     function stat.onFail() 
-        let t:execution = { 'command' : 'next' }
+        if !self.meetSucceed
+            let t:execution = { 'command' : 'cont' }
+        endif
     endfunction
 
     function stat.onSuccess() closure
+        let self.meetSucceed = 1
+        if exists('t:execution')
+            let t:execution = {}
+        endif
         call s:ChangeCurrentLine(a:line)    
     endfunction
 
     function stat.match(line) 
+        echom 'meet ' . a:line 
+        echom 'expect ' . string(self.progresses[0])
         return s:Match(a:line, self)
     endfunction
     return stat
@@ -211,6 +244,22 @@ function! s:isMatching(stat)
     return !exists('a:stat.succeed')
 endfunction
 
+function! s:dispatchProgress(line, col, progress)
+    let type = a:progress['type']
+    if type == 'consume'
+        return s:ProcessConsume(a:line, a:col, a:progress)
+    elseif type == 'number'
+        return  s:ProcessNumber(a:line, a:col, a:progress)
+    elseif type == 'method'
+        return  s:ProcessMethod(a:line, a:col, a:progress)
+    elseif type == 'between'
+        return  s:ProcessBetween(a:line, a:col, a:progress)
+    elseif type == 'any'
+        return s:ProcessAny(a:line, a:col, a:progress)
+    endif
+    return -1
+endfunction
+
 function! s:Match(...)
     let line = a:1
     let stat = a:2
@@ -221,18 +270,8 @@ function! s:Match(...)
         let current = get(stat, 'current', 0)
         let progress = progresses[current]
         let matchStartCol = col
-        let type = progress['type']
-        if type == 'consume'
-            let col = s:ProcessConsume(line, col, progress)
-        elseif type == 'number'
-            let col = s:ProcessNumber(line, col, progress)
-        elseif type == 'method'
-            let col = s:ProcessMethod(line, col, progress)
-        elseif type == 'between'
-            let col = s:ProcessBetween(line, col, progress)
-        elseif type == 'any'
-            let col = s:ProcessAny(line, col, progress)
-        else
+        let col = s:dispatchProgress(line, col, progress)
+        if col == -1
             break
         endif
 
@@ -246,7 +285,7 @@ function! s:Match(...)
         endif
 
         if s:isComplete(progress)
-            if type == 'method'
+            if progress.type == 'method'
                 call s:ProcessMethodComplete(progress)
             endif
 
@@ -257,6 +296,11 @@ function! s:Match(...)
             let stat['current'] = current + 1
         endif
     endwhile
+
+    if col == get(a:, 3, 0)
+        let stat['succeed'] = 0
+    endif
+
     return col
 endfunction
 
@@ -564,7 +608,7 @@ function! s:ProcessStop(matchStat)
     let class = a:matchStat['outClass']
     let line = a:matchStat['line']
     if stopType == 'Breakpoint hit'
-        let conditionBreakpoint = s:GetCondtionBreakpoint(class, line) 
+        let conditionBreakpoint = s:GetConditionBreakpoint(class, line) 
         if !empty(conditionBreakpoint)
             let t:execution = s:CreateConditionCommand(conditionBreakpoint)
             return
@@ -585,27 +629,44 @@ endfunction
 
 function! s:CreateConditionCommand(breakpoint)
     let command = 'print ' . (a:breakpoint.javaExp)
-    let conditionStr = ' "'.(a:breakpoint.javaExp) . '" = "' . a:breakpoint.expectValue . '"'
+    if type(a:breakpoint.expectValue) == v:t_number
+        let conditionStr = ' '.(a:breakpoint.javaExp) . ' = ' . a:breakpoint.expectValue  
+    else
+        let conditionStr = ' '.(a:breakpoint.javaExp) . ' = "' . a:breakpoint.expectValue . '"'
+    endif
     return { 'command' : command, 'matchStat' : s:newConditionStat(conditionStr, a:breakpoint.outClass, a:breakpoint.line ) }
 endfunction
 
-function! s:GetCondtionBreakpoint(class, line)
+function! s:GetConditionBreakpoint(class, line)
     if exists('t:conditionBreakpoints')
-        return get(t:conditionBreakpoints, class . ':'.  line, {})
+        return get(t:conditionBreakpoints, a:class . ':'.  a:line, {})
     endif
 endfunction
 
 function! SetConditionBreakpoint(...)
     let expectValue = a:1
-    if exists('a:2') && line("'>") && line("'>") == line("'<")
+    if exists('a:2')
+        let exp = a:2
+    elseif line("'>") && line("'>") == line("'<")
         let selectLine = line("'>")
         let exp = getline(selectLine)[col("'<") : col("'>")]
     else
-        let exp = a:2
+        let exp = expand('<cexpr>')
     endif
     
     echom 'To set a breakpoint with condition : ' . exp . ' = ' . expectValue
-    call SetBreakpoint(get(a:, '3', 0), get(a:, '4', ''))
+    let [outClass, line] = SetBreakpoint(get(a:, '3', line('.')), get(a:, '4', bufnr()))
+
+    if !exists('t:conditionBreakpoints')
+        let t:conditionBreakpoints = {}
+    endif
+    let t:conditionBreakpoints[outClass .':'. line] = {
+                \'javaExp' : exp, 
+                \'line' : line, 
+                \'outClass' : outClass, 
+                \'expectValue' : expectValue 
+                \}
+    
 endfunction
 
 function! s:ChangeCurrentLine(line)
@@ -695,8 +756,8 @@ function! s:ProcessPackageDeclaration(lines, row, col)
 endfunction
 
 function! SetBreakpoint(...)
-    let buf = get(a:, 1, bufnr())
-    let line = get(a:, 2, line("."))
+    let buf = get(a:, 2, bufnr())
+    let line = get(a:, 1, line("."))
 
     let package = s:Package(buf)
     if package == -1
@@ -709,6 +770,7 @@ function! SetBreakpoint(...)
     call term_sendkeys(t:jdbBuf, 'stop at '.package.'.'.file.':'.line."\<cr>")
 
     echom 'Set a breakponint at ' . buf .':'. line
+    return [package.'.'.file, line]
 endfunction
 
 function! s:SID()

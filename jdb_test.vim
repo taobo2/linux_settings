@@ -323,12 +323,24 @@ function! s:testMatchLinesPartial()
     let lines = s:createLines(['com.Tes', 't.'])
     let stat = { 'progresses' : [{ 'type' : 'method' }] }
     function stat.match(line)
+        return s:m.Match(a:line, self)
+        "return s:m.isMatchSucceed(self)
+    endfunction
+    let row = s:m.MatchLines(lines, 0, stat)
+    call assert_equal(0, row)
+    call assert_true(s:m.isMatching(stat))
+endfunction
+
+function! s:testMatchEmptyLine()
+    let lines = s:createLines([''])
+    let stat = { 'progresses' : [{ 'type' : 'method' }] }
+    function stat.match(line)
         call s:m.Match(a:line, self)
         return s:m.isMatchSucceed(self)
     endfunction
     let row = s:m.MatchLines(lines, 0, stat)
-    call assert_equal(2, row)
-    call assert_true(s:m.isMatching(stat))
+    call assert_equal(0, row)
+    call assert_true(s:m.isMatchFail(stat))
 endfunction
 
 function! s:testMatch2Progresses()
@@ -414,7 +426,7 @@ function! s:testMatchOutput()
 
     let stats = [ whereStat, stopStat ]
 
-    call s:m.MatchOutput(lines, {}, stats)
+    call s:m.MatchOutput(lines, stats)
     call assert_true(stopStat.matched)
 endfunction
 
@@ -442,37 +454,8 @@ function! s:testMatchOutputPartially()
 
     let stats = [ whereStat, stopStat ]
 
-    let matchingStat = s:m.MatchOutput(lines, {}, stats)
-    call assert_equal(stopStat, matchingStat)
+    let matchingStat = s:m.MatchOutput(lines, stats)
     call assert_true(s:m.isMatching(matchingStat))
-endfunction
-
-function! s:testMatchOutputPartiallyTwice()
-    let lines = s:createLines([
-                \'main[1] next',
-                \'Hello world!',
-                \'>',
-                \'Step completed: "thread=main", Hello.main(), '
-                \])
-    function! OnSucceed()
-        let self.matched = 1
-    endfunction
-
-    let stopStat = s:m.newStopStat(function('OnSucceed'))
-
-    let whereStat = {}
-    function whereStat.match(line)
-        return s:m.MatchWhere(a:line, self)
-    endfunction
-
-    let stats = [ whereStat, stopStat ]
-
-    let matchingStat = s:m.MatchOutput(lines, {}, stats)
-    
-    let nextLines = s:createLines(['line=4'])
-    let nextMatchingStat = s:m.MatchOutput(nextLines, matchingStat, stats)
-    call assert_equal(stopStat, nextMatchingStat)
-    call assert_true(s:m.isMatching(nextMatchingStat))
 endfunction
 
 function! s:testMatchOutputContinuous()
@@ -494,7 +477,7 @@ function! s:testMatchOutputContinuous()
         return s:m.MatchWhere(a:line, self)
     endfunction
     let stats = [ methodStat, whereStat ]
-    call s:m.MatchOutput(lines, {}, stats)
+    call s:m.MatchOutput(lines,  stats)
     call assert_true(whereStat.succeed)
 endfunction
 
