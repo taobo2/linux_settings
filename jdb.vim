@@ -1,13 +1,28 @@
-"====================== Jdb ========================
-"
-function! Jdb()
-    tabnew /tmp/db/Test.java
-    let JavacExit = function('s:JavacExit')
-    let t:javacBuf = term_start('javac -g /tmp/db/Test.java', { 'term_name' : 'javac db.Test', 'exit_cb' : JavacExit  })
-endfunction
+command! Jdebug  -nargs=* 
 
-function! Jdb1()
-    call term_start('jdb -sourcepath /tmp/ -classpath /tmp/ Add', { 'out_io' : 'buffer', 'out_name' : 'mybuffer' })
+function! Jdebug(...)
+    let filePath = get(a:, 1, expand('%:p'))
+    let buf = bufnr(filePath)
+
+    if exists('t:javaBuf')
+        call term_getjob(t:javaBuf)->job_stop('kill')
+        exe 'noautocmd ' . bufwinnr(t:javaBuf) . 'wincmd c'
+        unlet t:javaBuf
+    endif
+    if exists('t:jdbBuf') 
+        call term_getjob(t:jdbBuf)->job_stop('kill')    
+        exe 'noautocmd ' . bufwinnr(t:jdbBuf) . 'wincmd c'
+        unlet t:jdbBuf
+    else
+        exe 'tabnew ' . filePath
+    endif
+
+    let tailNum = split(s:Package(buf), '[.]')->len() + 1
+    let sourcepath = fnamemodify(filePath, repeat(':h', tailNum))
+    let t:sourcepaths = [ sourcepath ]
+    let compileCommand = 'javac -g -sourcepath '. sourcepath  . ' ' .  filePath
+    let JavacExit = function('s:JavacExit')
+    let t:javacBuf = term_start(compileCommand, { 'exit_cb' : JavacExit  })
 endfunction
 
 let s:jWord = '[^ .(;$]\+'
@@ -28,9 +43,39 @@ function! s:JavacExit(job, status)
     let winnr = range(1, winnr('$'))->map('winbufnr(v:val)')->index(t:javacBuf) + 1
     exe 'noautocmd ' . winnr . 'wincmd c'
     
-    let t:javaBuf = term_start('java -agentlib:jdwp=transport=dt_socket,address=8000,server=y -classpath /tmp/ db.Test', { 'term_name' : 'db.Test' })
-    sleep 2
-    let t:jdbBuf = term_start('jdb -sourcepath /tmp/ -attach 8000', { 'term_name' : 'JDB', 'out_cb' : function('s:Output') })
+    let t:javaBuf = term_start('java -agentlib:jdwp=transport=dt_socket,server=y -classpath /tmp/ db.Test', { 'term_name' : 'db.Test', 'vertical' : 1, 'out_cb' : function('s:JavaOutput') })
+endfunction
+
+function! s:JavaOutput(chan, msg)
+    if exists('t:jdbBuf')
+        return
+    endif
+
+    let progresses = [
+                \{ 'type' : 'consume', 'consume' : 'Listening for transport dt_socket at address: ' },
+                \{ 'type' : 'number' }
+                \]
+    let lineMatcher = { 'progresses' : progresses }
+    function! lineMatcher.match(line)
+        if !s:isMatching(self)
+            let self.progresses = [
+                        \{ 'type' : 'consume', 'consume' : 'Listening for transport dt_socket at address:' },
+                        \{ 'type' : 'number' }
+                        \]
+            if exists('self.succeed')
+                unlet self.succeed
+            endif
+        endif
+        return s:Match(a:line, self)
+    endfunction
+
+    function! lineMatcher.onSucceed()
+        let port = self.progresses[1]['match']
+        let t:jdbBuf = term_start('jdb -sourcepath /tmp/ -attach '. port, { 'term_name' : 'JDB', 'out_cb' : function('s:Output') })
+    endfunction
+
+    let lines = s:newLines(1, 2, t:javaBuf)
+    call s:MatchOutput(lines, [lineMatcher])
 endfunction
 
 function! s:MatchOutput(lines, stats)
@@ -55,7 +100,6 @@ function! s:MatchLines(lines, start, stat)
     let row = a:start
     while row < a:lines.len()
         let line = a:lines.get(row)
-        echom 'match lines '. line
         let matchToCol = a:stat.match(line)
         if s:isMatchSucceed(a:stat)
             if exists('a:stat.onSucceed')
@@ -85,14 +129,14 @@ function! s:MatchLines(lines, start, stat)
     return row
 endfunction
 
-function s:newLines(start, end)
+function s:newLines(start, end, buf)
     let lines = {}
     function! lines.len() closure
         return a:end - a:start + 1    
     endfunction
 
     function! lines.get(row) closure
-        return s:GetOutputLine(a:row + a:start)
+        return s:GetOutputLine(a:row + a:start, a:buf)
     endfunction
 
     function! lines.toString()
@@ -120,8 +164,7 @@ function! s:Output(chan, msg)
     endif
 
     let end = term_getcursor(t:jdbBuf)[0] - 1 + term_getscrolled(t:jdbBuf)
-    echom "===================== Output:". start . "," . end." =================="
-    let lines = s:newLines(start, end)
+    let lines = s:newLines(start, end, t:jdbBuf)
     if exists('t:executionMatch')
         let stats = [ t:executionMatch, s:newStopStat(function('s:ProcessStop')), s:newWhereStat()]
         unlet t:executionMatch
@@ -131,11 +174,6 @@ function! s:Output(chan, msg)
 
     call s:MatchOutput(lines, stats)
 
-    "echom "============================================================"
-    "echom lines.toString()
-    "echom term_getline(t:jdbBuf, '.')
-    "echom string(t:executionMatch)
-    "echom "============================================================"
     if !empty(get(t:, 'execution', {}))
         let executeCommand = t:execution.command . "\<cr>"
         if exists('t:execution.matchStat')
@@ -151,24 +189,28 @@ endfunction
 function! s:newConditionStat(conditionStr, outClass, line)
     let progresses = [ { 'type' : 'consume', 'consume' : a:conditionStr } ]
     let stat = { 'progresses' : progresses , 'meetSucceed' : 0 }
-
     function stat.onFail() 
         if !self.meetSucceed
             let t:execution = { 'command' : 'cont' }
         endif
     endfunction
 
-    function stat.onSuccess() closure
+    function stat.onSucceed() closure
         let self.meetSucceed = 1
         if exists('t:execution')
             let t:execution = {}
         endif
-        call s:ChangeCurrentLine(a:line)    
+        call s:ChangeCurrentLine(a:outClass, a:line)    
     endfunction
 
-    function stat.match(line) 
-        echom 'meet ' . a:line 
-        echom 'expect ' . string(self.progresses[0])
+    function stat.match(line) closure
+        if !s:isMatching(self) 
+            let stat.progresses =[ { 'type' : 'consume', 'consume' : a:conditionStr } ] 
+            if exists('self.succeed')
+                unlet self.succeed
+            endif
+        endif
+        
         return s:Match(a:line, self)
     endfunction
     return stat
@@ -198,7 +240,7 @@ function! s:newWhereStat()
 
     function stat.onSucceed()
         if get(self, 'topWhere', 1)
-            call s:ChangeCurrentLine(self.line)
+            call s:ChangeCurrentLine(self.outClass, self.line)
             let self.topWhere = 0
         endif
     endfunction
@@ -266,7 +308,7 @@ function! s:Match(...)
     let col = get(a:, 3, 0)
 
     let progresses = stat['progresses']
-    while col < len(line)
+    while 1
         let current = get(stat, 'current', 0)
         let progress = progresses[current]
         let matchStartCol = col
@@ -294,6 +336,10 @@ function! s:Match(...)
                 return col
             endif
             let stat['current'] = current + 1
+        endif
+
+        if col >= len(line)
+            break
         endif
     endwhile
 
@@ -614,15 +660,15 @@ function! s:ProcessStop(matchStat)
             return
         endif
     endif
-    echom stopType . ' ' . class . ':' . line
-    call s:ChangeCurrentLine(line)
+    "echom stopType . ' ' . class . ':' . line
+    call s:ChangeCurrentLine(class, line)
 endfunction
 
-function! s:GetOutputLine(row)
-    if term_getcursor(t:jdbBuf)[0] - a:row < term_getsize(t:jdbBuf)[0] 
-        let l = term_getline(t:jdbBuf, a:row - term_getscrolled(t:jdbBuf)) "can only get last term_size rows
+function! s:GetOutputLine(row, buf)
+    if term_getcursor(a:buf)[0] - a:row < term_getsize(a:buf)[0] 
+        let l = term_getline(a:buf, a:row - term_getscrolled(a:buf)) "can only get last term_size rows
     else
-        let l = getbufline(t:jdbBuf, a:row) "cursor row may not be in buffer at this time
+        let l = getbufline(a:buf, a:row) "cursor row may not be in buffer at this time
     endif
     return l
 endfunction
@@ -654,7 +700,7 @@ function! SetConditionBreakpoint(...)
         let exp = expand('<cexpr>')
     endif
     
-    echom 'To set a breakpoint with condition : ' . exp . ' = ' . expectValue
+    "echom 'To set a breakpoint with condition : ' . exp . ' = ' . expectValue
     let [outClass, line] = SetBreakpoint(get(a:, '3', line('.')), get(a:, '4', bufnr()))
 
     if !exists('t:conditionBreakpoints')
@@ -669,10 +715,40 @@ function! SetConditionBreakpoint(...)
     
 endfunction
 
-function! s:ChangeCurrentLine(line)
+function! s:ChangeCurrentLine(outClass, line)
+    let javaFile = ''
+    let qualifyNames = a:outClass->split('[.]')
+    let qualifyNames[-1] = qualifyNames[-1] . '.java'
+
+    for srcPath in t:sourcepaths
+        let path = srcPath
+        for name in qualifyNames
+            let path = globpath(path, name)
+            if empty(path)
+                break
+            endif
+        endfor
+
+        if !empty(path)
+            echom 'find java file' . path
+            let javaFile = path
+            break
+        endif
+    endfor
+
+    if empty(javaFile)
+        echom 'Can not find ' . outClass
+        return
+    endif
+    
     let curWin = winnr()
     let srcWin = range(1, winnr('$'))->filter('winbufnr(v:val)!=t:jdbBuf && winbufnr(v:val)!=t:javaBuf')[0]
     exec 'silent ' . srcWin.'wincmd w '
+    if bufexists(javaFile)
+        exec 'silent b ' . javaFile
+    else
+        exec 'silent e ' .javaFile
+    endif
     exec 'silent ' . a:line
     exec 'silent ' . curWin.'wincmd w'
     exec 'redraw!'
@@ -769,7 +845,7 @@ function! SetBreakpoint(...)
 
     call term_sendkeys(t:jdbBuf, 'stop at '.package.'.'.file.':'.line."\<cr>")
 
-    echom 'Set a breakponint at ' . buf .':'. line
+    "echom 'Set a breakponint at ' . buf .':'. line
     return [package.'.'.file, line]
 endfunction
 
