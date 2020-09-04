@@ -1,9 +1,35 @@
-command! Jdebug  -nargs=* 
+command! -nargs=? -complete=file Jdebug call <SID>Jdebug(<f-args>)
+command! -nargs=+ -complete=file JdebugSource call <SID>SetSourcepath(<f-args>)
+command! -nargs=+ JdebugRemote call <SID>JdebugRemote(<f-args>)
 
-function! Jdebug(...)
-    let filePath = get(a:, 1, expand('%:p'))
-    let buf = bufnr(filePath)
+function! <SID>JdebugRemote(host, port)
+    call s:beforeDebug('')
+    let t:jdbBuf = term_start('jdb -sourcepath '. s:getSourcepathArg() . ' -attach '. a:host .':' . a:port, { 'term_name' : 'JDB', 'vertical' : 1,  'out_cb' : function('s:Output') })
+endfunction
 
+function! s:getSourcepathArg(...)
+    if exists('t:sourcepaths') && !empty('t:sourcepaths')
+        return t:sourcepaths->join(':')
+    elseif get(a:, 1, bufname()) =~ '[.]java$'
+        let javaFile = get(a:, 1, bufname())
+        let buf = bufnr(javaFile)
+        if buf == -1
+            exe 'e ' . javaFile
+            let buf = bufnr(javaFile)
+        endif
+        let tailNum = split(s:Package(buf), '[.]')->len() + 1
+        let sourcepath = fnamemodify(javaFile, repeat(':h', tailNum))
+        return  sourcepath 
+    else
+        return  getcwd() 
+    endif
+endfunction
+
+function! <SID>SetSourcepath(...)
+    let t:sourcepaths = a:000
+endfunction
+
+function! s:beforeDebug(filePath)
     if exists('t:javaBuf')
         call term_getjob(t:javaBuf)->job_stop('kill')
         exe 'noautocmd ' . bufwinnr(t:javaBuf) . 'wincmd c'
@@ -13,14 +39,18 @@ function! Jdebug(...)
         call term_getjob(t:jdbBuf)->job_stop('kill')    
         exe 'noautocmd ' . bufwinnr(t:jdbBuf) . 'wincmd c'
         unlet t:jdbBuf
+    elseif empty(a:filePath)
+        exe 'tabnew ' . a:filePath
     else
-        exe 'tabnew ' . filePath
+        exe 'tabnew '
     endif
+endfunction
 
-    let tailNum = split(s:Package(buf), '[.]')->len() + 1
-    let sourcepath = fnamemodify(filePath, repeat(':h', tailNum))
-    let t:sourcepaths = [ sourcepath ]
-    let compileCommand = 'javac -g -sourcepath '. sourcepath  . ' ' .  filePath
+function! <SID>Jdebug(...)
+    let filePath = get(a:, 1, expand('%:p'))
+
+    call s:beforeDebug(filePath)
+    let compileCommand = 'javac -g -sourcepath '. s:getSourcepathArg(filePath) . ' ' .  filePath
     let JavacExit = function('s:JavacExit')
     let t:javacBuf = term_start(compileCommand, { 'exit_cb' : JavacExit  })
 endfunction
@@ -71,7 +101,7 @@ function! s:JavaOutput(chan, msg)
 
     function! lineMatcher.onSucceed()
         let port = self.progresses[1]['match']
-        let t:jdbBuf = term_start('jdb -sourcepath /tmp/ -attach '. port, { 'term_name' : 'JDB', 'out_cb' : function('s:Output') })
+        let t:jdbBuf = term_start('jdb -sourcepath '.s:getSourcepathArg().' -attach '. port, { 'term_name' : 'JDB', 'out_cb' : function('s:Output') })
     endfunction
 
     let lines = s:newLines(1, 2, t:javaBuf)
@@ -720,7 +750,7 @@ function! s:ChangeCurrentLine(outClass, line)
     let qualifyNames = a:outClass->split('[.]')
     let qualifyNames[-1] = qualifyNames[-1] . '.java'
 
-    for srcPath in t:sourcepaths
+    for srcPath in s:getSourcepathArg()->split(':')
         let path = srcPath
         for name in qualifyNames
             let path = globpath(path, name)
