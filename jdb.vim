@@ -1,25 +1,51 @@
 command! -nargs=? -complete=file Jdebug call <SID>Jdebug(<f-args>)
 command! -nargs=+ -complete=file JdebugSource call <SID>SetSourcepath(<f-args>)
 command! -nargs=+ JdebugRemote call <SID>JdebugRemote(<f-args>)
+command! -nargs=* JdebugStop call <SID>toggleBreakpoint(<f-args>)
+command! -nargs=* JdebugConditionStop call <SID>SetConditionBreakpoint(<f-args>)
+command! -nargs=+ JdebugRun call <SID>runCommand(<f-args>)
+
+highlight! JdebugBreakpoint ctermbg=red
+highlight! JdebugConditionBreakpoint ctermbg=green
+
+function! <SID>runCommand(...)
+   if s:waitInput() 
+       call term_sendkeys(t:jdbBuf, a:000->join(' '))
+   else
+       echom 'Jdb is busy, ignore this command.'
+   endif
+endfunction
+
+function! s:waitInput()
+    if !exists('t:jdbBuf')
+        return 
+    endif
+
+    let promptReg = '^' . s:prompt . '\(\s' . s:prompt . '\)*'
+    return term_getline(t:jdbBuf, '.') =~ promptReg . '\s*' 
+endfunction
+
+function! s:srcWin()
+    return range(1, winnr('$'))->filter('winbufnr(v:val)!=t:jdbBuf && winbufnr(v:val)!=t:javaBuf')[0]
+endfunction
+
+function! s:jdbExitCb(a1, a2)
+    call matchdelete(t:stopMatchId, s:srcWin())
+endfunction
 
 function! <SID>JdebugRemote(host, port)
     call s:beforeDebug('')
-    let t:jdbBuf = term_start('jdb -sourcepath '. s:getSourcepathArg() . ' -attach '. a:host .':' . a:port, { 'term_name' : 'JDB', 'vertical' : 1,  'out_cb' : function('s:Output') })
+    let t:jdbBuf = term_start('jdb -sourcepath '. s:getSourcepathArg() . ' -attach '. a:host .':' . a:port, 
+                \{ 
+                \'term_name' : 'JDB', 
+                \'vertical' : 1,  
+                \'out_cb' : function('s:Output')
+                \})
 endfunction
 
-function! s:getSourcepathArg(...)
+function! s:getSourcepathArg()
     if exists('t:sourcepaths') && !empty('t:sourcepaths')
         return t:sourcepaths->join(':')
-    elseif get(a:, 1, bufname()) =~ '[.]java$'
-        let javaFile = get(a:, 1, bufname())
-        let buf = bufnr(javaFile)
-        if buf == -1
-            exe 'e ' . javaFile
-            let buf = bufnr(javaFile)
-        endif
-        let tailNum = split(s:Package(buf), '[.]')->len() + 1
-        let sourcepath = fnamemodify(javaFile, repeat(':h', tailNum))
-        return  sourcepath 
     else
         return  getcwd() 
     endif
@@ -39,7 +65,7 @@ function! s:beforeDebug(filePath)
         call term_getjob(t:jdbBuf)->job_stop('kill')    
         exe 'noautocmd ' . bufwinnr(t:jdbBuf) . 'wincmd c'
         unlet t:jdbBuf
-    elseif empty(a:filePath)
+    elseif !empty(a:filePath)
         exe 'tabnew ' . a:filePath
     else
         exe 'tabnew '
@@ -48,9 +74,20 @@ endfunction
 
 function! <SID>Jdebug(...)
     let filePath = get(a:, 1, expand('%:p'))
-
+    if filePath =~ '[.]java$'
+        let buf = bufnr(filePath)
+        if buf == -1
+            exe 'e ' . filePath
+            let buf = bufnr(filePath)
+        endif
+        let tailNum = split(s:Package(buf), '[.]')->len() + 1
+        let sourcepath = fnamemodify(filePath, repeat(':h', tailNum))
+        let sourcepaths = get(t:, 'sourcepaths', []) + [ sourcepath ]
+    endif
+    
     call s:beforeDebug(filePath)
-    let compileCommand = 'javac -g -sourcepath '. s:getSourcepathArg(filePath) . ' ' .  filePath
+    let t:sourcepaths = sourcepaths
+    let compileCommand = 'javac -g -sourcepath '. s:getSourcepathArg() . ' ' .  filePath
     let JavacExit = function('s:JavacExit')
     let t:javacBuf = term_start(compileCommand, { 'exit_cb' : JavacExit  })
 endfunction
@@ -101,7 +138,12 @@ function! s:JavaOutput(chan, msg)
 
     function! lineMatcher.onSucceed()
         let port = self.progresses[1]['match']
-        let t:jdbBuf = term_start('jdb -sourcepath '.s:getSourcepathArg().' -attach '. port, { 'term_name' : 'JDB', 'out_cb' : function('s:Output') })
+        let t:jdbBuf = term_start('jdb -sourcepath '.s:getSourcepathArg().' -attach '. port, 
+                    \{ 
+                    \'term_name' : 'JDB',
+                    \ 'out_cb' : function('s:Output'),
+                    \ 'exit_cb' : function('s:jdbExitCb')
+                    \})
     endfunction
 
     let lines = s:newLines(1, 2, t:javaBuf)
@@ -196,10 +238,10 @@ function! s:Output(chan, msg)
     let end = term_getcursor(t:jdbBuf)[0] - 1 + term_getscrolled(t:jdbBuf)
     let lines = s:newLines(start, end, t:jdbBuf)
     if exists('t:executionMatch')
-        let stats = [ t:executionMatch, s:newStopStat(function('s:ProcessStop')), s:newWhereStat()]
+        let stats = [ t:executionMatch, s:newStopStat(function('s:ProcessStop')), s:newWhereStat(), s:newSetBreakpointStat()]
         unlet t:executionMatch
     else
-        let stats = [ s:newStopStat(function('s:ProcessStop')), s:newWhereStat()]
+        let stats = [ s:newStopStat(function('s:ProcessStop')), s:newWhereStat(), s:newSetBreakpointStat()]
     endif
 
     call s:MatchOutput(lines, stats)
@@ -214,6 +256,64 @@ function! s:Output(chan, msg)
     endif
 
     let t:lastCursorRow = end
+endfunction
+
+function! s:newSetBreakpointStat()
+    let candidates = [
+                \{ 'type' : 'consume', 'consume' : 'Set breakpoint' },
+                \{ 'type' : 'consume', 'consume' : 'Deferring breakpoint' }
+                \]
+    let progresses = [ 
+                \{ 'type' : 'any', 'candidates' : candidates  },
+                \{ 'type' : 'between', 'start' : ' ', 'end' : ':' },
+                \{ 'type' : 'number' }
+                \]
+    let stat = s:newStat(progresses)
+
+    function! stat.onSucceed()
+        echom 'new set breakpoints'
+        if !exists('t:breakpoints')
+            let t:breakpoints = {}
+        endif
+        let outClass = self.progresses[1].match[1:-2]
+        let line = self.progresses[2].match
+        let t:breakpoints[outClass . ':' . line] = 1
+        call s:updateBreakpoints()
+    endfunction
+
+    retur stat
+endfunction
+
+function! s:updateBreakpoints()
+    if exists('t:matchIds')
+        call matchdelete(t:matchIds, s:srcWin())
+    endif
+    let prefix = s:outClass(s:srcWin()->winbufnr())
+    let lines = get(t:, 'breakpoints', {})
+                \->keys()
+                \->filter('v:val->stridx(prefix) == 0')
+                \->map('v:val->split(":")[1]')
+                \->map('[v:val, 1]')
+    echom lines->join(',')
+    let t:matchIds = matchaddpos('JdebugBreakpoint', lines, 10, -1, {'window' :  s:srcWin()})
+endfunction
+
+function! s:newStat(progresses)
+    let stat = {}
+    function stat.match(line) closure
+        if !s:isMatching(self) || !exists('stat.progresses')
+            let stat.progresses = a:progresses->deepcopy()
+            if exists('self.succeed')
+                unlet self.succeed
+            endif
+            if exists('self.current')
+                unlet self.current
+            endif
+        endif
+
+        return s:Match(a:line, self)
+    endfunction
+    return stat
 endfunction
 
 function! s:newConditionStat(conditionStr, outClass, line)
@@ -719,7 +819,7 @@ function! s:GetConditionBreakpoint(class, line)
     endif
 endfunction
 
-function! SetConditionBreakpoint(...)
+function! <SID>SetConditionBreakpoint(...)
     let expectValue = a:1
     if exists('a:2')
         let exp = a:2
@@ -730,8 +830,12 @@ function! SetConditionBreakpoint(...)
         let exp = expand('<cexpr>')
     endif
     
+    let buf = get(a:, '4', bufnr())
+    let class = get(a:, '4', buf)->bufname()->fnamemodify(':t:r')
+    let outClass = s:Package(buf) . '.' . class
+    let line = get(a:, '3', line('.'))
     "echom 'To set a breakpoint with condition : ' . exp . ' = ' . expectValue
-    let [outClass, line] = SetBreakpoint(get(a:, '3', line('.')), get(a:, '4', bufnr()))
+    let [outClass, line] = s:setBreakpoint(line, outClass)
 
     if !exists('t:conditionBreakpoints')
         let t:conditionBreakpoints = {}
@@ -760,20 +864,19 @@ function! s:ChangeCurrentLine(outClass, line)
         endfor
 
         if !empty(path)
-            echom 'find java file' . path
             let javaFile = path
             break
         endif
     endfor
 
     if empty(javaFile)
-        echom 'Can not find ' . outClass
+        echom s:getSourcepathArg()
+        echom 'Can not find ' . a:outClass
         return
     endif
     
     let curWin = winnr()
-    let srcWin = range(1, winnr('$'))->filter('winbufnr(v:val)!=t:jdbBuf && winbufnr(v:val)!=t:javaBuf')[0]
-    exec 'silent ' . srcWin.'wincmd w '
+    exec 'silent ' . s:srcWin() .'wincmd w '
     if bufexists(javaFile)
         exec 'silent b ' . javaFile
     else
@@ -782,6 +885,11 @@ function! s:ChangeCurrentLine(outClass, line)
     exec 'silent ' . a:line
     exec 'silent ' . curWin.'wincmd w'
     exec 'redraw!'
+endfunction
+
+function! s:outClass(buf)
+    let class = bufname(a:buf)->fnamemodify(':t:r')
+    return s:Package(a:buf) . '.' . class
 endfunction
 
 function! s:Package(...)
@@ -861,22 +969,33 @@ function! s:ProcessPackageDeclaration(lines, row, col)
     endwhile
 endfunction
 
-function! SetBreakpoint(...)
-    let buf = get(a:, 2, bufnr())
-    let line = get(a:, 1, line("."))
-
-    let package = s:Package(buf)
-    if package == -1
-        echom 'Not a java file'
-        return
+function! <SID>toggleBreakpoint(...)
+    let buf = get(a:, 1, '')->bufnr()
+    if get(a:, 2, 0) > 0
+        let line = a:2
+    else
+        let line = line('.', win_getid(s:srcWin()))
     endif
-    
-    let file = bufname(buf)->fnamemodify(':t:r')
 
-    call term_sendkeys(t:jdbBuf, 'stop at '.package.'.'.file.':'.line."\<cr>")
+    if !exists('t:breakpoints')
+        let t:breakpoints = {}
+    endif
 
-    "echom 'Set a breakponint at ' . buf .':'. line
-    return [package.'.'.file, line]
+    let class = bufname(buf)->fnamemodify(':t:r')
+    let qualifiedClass = s:Package(buf) . '.' . class
+    if get(t:, 'breakpoints', {})->has_key(qualifiedClass . ':' . line)
+        call s:clearBreakpoint(line, qualifiedClass)
+    else
+        call s:setBreakpoint(line, qualifiedClass)
+    endif
+endfunction
+
+function! s:clearBreakpoint(line, qualifiedClass)
+    call term_sendkeys(t:jdbBuf, 'clear '. qualifiedClass . ':'.a:line."\<cr>")
+endfunction
+
+function! s:setBreakpoint(line, qualifiedClass)
+    call term_sendkeys(t:jdbBuf, 'stop at '.a:qualifiedClass.':'.a:line."\<cr>")
 endfunction
 
 function! s:SID()

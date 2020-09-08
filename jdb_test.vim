@@ -481,6 +481,22 @@ function! s:testMatchOutputContinuous()
     call assert_true(whereStat.succeed)
 endfunction
 
+function! s:testSetBreakpoint()
+    let candidates = [
+                \{ 'type' : 'consume', 'consume' : 'Set breakpoint' },
+                \{ 'type' : 'consume', 'consume' : 'Deferring breakpoint' }
+                \]
+    let progresses = [ 
+                \{ 'type' : 'any', 'candidates' : candidates  },
+                \{ 'type' : 'between', 'start' : ' ', 'end' : ':' },
+                \{ 'type' : 'number' }
+                \]
+    let stat = s:m.newStat(progresses)
+    let lines = s:createLines(['Set breakpoint db.Test:29', ''])
+    let row = s:m.MatchLines(lines, 0, stat)
+    call assert_true(stat.succeed)
+endfunction
+
 function! s:createLines(data)
     let lines = { 'data' : a:data  }
     function! lines.len()
@@ -492,4 +508,5 @@ function! s:createLines(data)
     endfunction
     return lines
 endfunction
+
 call JdbTest()
