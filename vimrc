@@ -1,5 +1,4 @@
 set nocompatible
-"set nu
 "set autoindent
 set ignorecase smartcase
 syntax on
@@ -20,7 +19,14 @@ set ls=2
 "path define where command (such as find) goes to find files, ** means all sub
 "directories
 set path+=./**
-set relativenumber
+
+set number relativenumber
+augroup LineNumber
+    autocmd!
+    autocmd WinLeave * setlocal number norelativenumber
+    autocmd WinEnter * setlocal number relativenumber
+augroup END
+
 set autoread
 set backup
 "./ is replaced with the path of the current file
