@@ -497,6 +497,17 @@ function! s:testSetBreakpoint()
     call assert_true(stat.succeed)
 endfunction
 
+function! s:testProcessInitMethod()
+    let matchstr = 'java.io.FileInputStream.'
+    let line = matchstr . '<init>'
+    let progress = { 'match' : matchstr }
+    let col = s:m.ProcessMethod(line, len(matchstr), progress)
+    call assert_equal(len(matchstr) + 1, col)
+    let col = s:m.ProcessMethod(line, col, progress)
+    call assert_equal(len(line), col, 'second match init>')
+    call assert_true(s:m.isComplete(progress))
+endfunction
+
 function! s:createLines(data)
     let lines = { 'data' : a:data  }
     function! lines.len()

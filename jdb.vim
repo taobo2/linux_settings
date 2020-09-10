@@ -1,12 +1,30 @@
 command! -nargs=? -complete=file Jdebug call <SID>Jdebug(<f-args>)
 command! -nargs=+ -complete=file JdebugSource call <SID>SetSourcepath(<f-args>)
+command! -nargs=+ -complete=file JdebugAddSource call <SID>addSourcepath(<f-args>)
 command! -nargs=+ JdebugRemote call <SID>JdebugRemote(<f-args>)
 command! -nargs=* JdebugStop call <SID>toggleBreakpoint(<f-args>)
 command! -nargs=* JdebugConditionStop call <SID>SetConditionBreakpoint(<f-args>)
 command! -nargs=+ JdebugRun call <SID>runCommand(<f-args>)
 
-highlight! JdebugBreakpoint ctermbg=red
-highlight! JdebugConditionBreakpoint ctermbg=green
+augroup JdebugAutocmd
+    autocmd!
+    autocmd CursorMoved *.java call <SID>popCondition()
+augroup END
+
+highlight! JdebugBreakpoint ctermbg=green
+highlight! JdebugStop ctermbg=red
+
+function! <SID>popCondition()
+    if col('.') > 1
+        return
+    endif
+
+    let key = s:outClass(bufnr()) . ':' . line('.')
+    if exists('t:breakpoints["' . key .'"].javaExp')
+        let bp = t:breakpoints[key]
+        call popup_atcursor(bp.javaExp . ' = ' . bp.expectValue, #{ pos : 'botleft'})
+    endif
+endfunction
 
 function! <SID>runCommand(...)
    if s:waitInput() 
@@ -30,7 +48,10 @@ function! s:srcWin()
 endfunction
 
 function! s:jdbExitCb(a1, a2)
-    call matchdelete(t:stopMatchId, s:srcWin())
+    if exists('t:stopMatchId')
+        call matchdelete(t:stopMatchId, s:srcWin())
+        unlet t:stopMatchId
+    endif
 endfunction
 
 function! <SID>JdebugRemote(host, port)
@@ -51,11 +72,19 @@ function! s:getSourcepathArg()
     endif
 endfunction
 
+function! <SID>addSourcepath(...)
+    call <SID>SetSourcepath(get(t:, 'sourcepaths', []) + a:000)
+endfunction
+
 function! <SID>SetSourcepath(...)
     let t:sourcepaths = a:000
+    if exists('t:jdbBuf') && term_getstatus(t:jdbBuf) == 'running'
+        call term_sendkeys(t:jdbBuf, 'use ' . s:getSourcepathArg() . "\<cr>")
+    endif
 endfunction
 
 function! s:beforeDebug(filePath)
+    let breakpoints = get(t:, 'breakpoints', {})
     if exists('t:javaBuf')
         call term_getjob(t:javaBuf)->job_stop('kill')
         exe 'noautocmd ' . bufwinnr(t:javaBuf) . 'wincmd c'
@@ -70,6 +99,8 @@ function! s:beforeDebug(filePath)
     else
         exe 'tabnew '
     endif
+    let t:breakpoints = deepcopy(breakpoints)
+    call s:addBreakpoints()
 endfunction
 
 function! <SID>Jdebug(...)
@@ -92,7 +123,7 @@ function! <SID>Jdebug(...)
     let t:javacBuf = term_start(compileCommand, { 'exit_cb' : JavacExit  })
 endfunction
 
-let s:jWord = '[^ .(;$]\+'
+let s:jWord = '[^ .(;$><]\+'
 let s:package = 'package'
 let s:packagePart = '\(' . s:jWord . '\|\.\)'
 let s:oneLineComment = '//.*'
@@ -111,6 +142,13 @@ function! s:JavacExit(job, status)
     exe 'noautocmd ' . winnr . 'wincmd c'
     
     let t:javaBuf = term_start('java -agentlib:jdwp=transport=dt_socket,server=y -classpath /tmp/ db.Test', { 'term_name' : 'db.Test', 'vertical' : 1, 'out_cb' : function('s:JavaOutput') })
+endfunction
+
+function! s:addBreakpoints()
+    let t:executions = get(t:, 'executions', [])
+    for b in get(t:, 'breakpoints', {})->keys()
+        call add(t:executions, #{ command : 'stop at ' . b })
+    endfor
 endfunction
 
 function! s:JavaOutput(chan, msg)
@@ -166,6 +204,12 @@ function! s:MatchOutput(lines, stats)
             let row = row + 1
         endif
     endwhile
+
+    for s in a:stats
+        if exists('s.onOutputEnd')
+            call s.onOutputEnd()
+        endif
+    endfor
 endfunction
 
 function! s:MatchLines(lines, start, stat)
@@ -235,27 +279,28 @@ function! s:Output(chan, msg)
         let start = 0
     endif
 
-    let end = term_getcursor(t:jdbBuf)[0] - 1 + term_getscrolled(t:jdbBuf)
+    let end = term_getcursor(t:jdbBuf)[0]  + term_getscrolled(t:jdbBuf)
     let lines = s:newLines(start, end, t:jdbBuf)
     if exists('t:executionMatch')
-        let stats = [ t:executionMatch, s:newStopStat(function('s:ProcessStop')), s:newWhereStat(), s:newSetBreakpointStat()]
+        let stats = [ t:executionMatch, s:newStopStat(function('s:ProcessStop')), s:newWhereStat(), s:newSetBreakpointStat(), s:newClearBreakpointStat()]
         unlet t:executionMatch
     else
-        let stats = [ s:newStopStat(function('s:ProcessStop')), s:newWhereStat(), s:newSetBreakpointStat()]
+        let stats = [ s:newStopStat(function('s:ProcessStop')), s:newWhereStat(), s:newSetBreakpointStat(), s:newClearBreakpointStat()]
     endif
 
     call s:MatchOutput(lines, stats)
 
-    if !empty(get(t:, 'execution', {}))
-        let executeCommand = t:execution.command . "\<cr>"
-        if exists('t:execution.matchStat')
-            let t:executionMatch = t:execution.matchStat
-        endif
-        let t:execution = {}
-        call term_sendkeys(t:jdbBuf, executeCommand)
+    let t:lastCursorRow = end
+    if get(t:, 'executions', [])->empty()
+        return
     endif
 
-    let t:lastCursorRow = end
+    let execution = t:executions->remove(0)
+    let executeCommand = execution.command . "\<cr>"
+    if exists('execution.matchStat')
+        let t:executionMatch = execution.matchStat
+    endif
+    call term_sendkeys(t:jdbBuf, executeCommand)
 endfunction
 
 function! s:newSetBreakpointStat()
@@ -271,17 +316,37 @@ function! s:newSetBreakpointStat()
     let stat = s:newStat(progresses)
 
     function! stat.onSucceed()
-        echom 'new set breakpoints'
         if !exists('t:breakpoints')
             let t:breakpoints = {}
         endif
         let outClass = self.progresses[1].match[1:-2]
         let line = self.progresses[2].match
-        let t:breakpoints[outClass . ':' . line] = 1
+        let key = outClass . ':' . line
+        if !has_key(t:breakpoints, key)
+            let t:breakpoints[outClass . ':' . line] = {}
+        endif
         call s:updateBreakpoints()
     endfunction
 
     retur stat
+endfunction
+
+function! s:newClearBreakpointStat()
+    let progresses = [ 
+                \{ 'type' : 'consume', 'consume' : 'Removed: breakpoint' },
+				\{ 'type' : 'between', 'start' : ' ', 'end' : ':' },
+                \{ 'type' : 'number' }
+                \]
+    let stat = s:newStat(progresses)
+    function! stat.onSucceed()
+        let outClass = self.progresses[1].match[1:-2]
+        let line = self.progresses[2].match
+        if exists('t:breakpoints["' . outClass . ':' . line . '"]')
+            unlet t:breakpoints[outClass . ':' . line] 
+            call s:updateBreakpoints()
+        endif
+    endfunction
+    return stat
 endfunction
 
 function! s:updateBreakpoints()
@@ -294,7 +359,6 @@ function! s:updateBreakpoints()
                 \->filter('v:val->stridx(prefix) == 0')
                 \->map('v:val->split(":")[1]')
                 \->map('[v:val, 1]')
-    echom lines->join(',')
     let t:matchIds = matchaddpos('JdebugBreakpoint', lines, 10, -1, {'window' :  s:srcWin()})
 endfunction
 
@@ -318,31 +382,20 @@ endfunction
 
 function! s:newConditionStat(conditionStr, outClass, line)
     let progresses = [ { 'type' : 'consume', 'consume' : a:conditionStr } ]
-    let stat = { 'progresses' : progresses , 'meetSucceed' : 0 }
-    function stat.onFail() 
-        if !self.meetSucceed
-            let t:execution = { 'command' : 'cont' }
-        endif
-    endfunction
+    let stat = s:newStat(progresses)
+    let stat.meetSucceed = 0
 
     function stat.onSucceed() closure
         let self.meetSucceed = 1
-        if exists('t:execution')
-            let t:execution = {}
-        endif
         call s:ChangeCurrentLine(a:outClass, a:line)    
     endfunction
 
-    function stat.match(line) closure
-        if !s:isMatching(self) 
-            let stat.progresses =[ { 'type' : 'consume', 'consume' : a:conditionStr } ] 
-            if exists('self.succeed')
-                unlet self.succeed
-            endif
+    function stat.onOutputEnd()
+        if !self.meetSucceed
+            let t:executions = get(t:, 'executions', [])->add({ 'command' : 'cont' })
         endif
-        
-        return s:Match(a:line, self)
     endfunction
+
     return stat
 endfunction
 
@@ -658,18 +711,35 @@ function! s:ProcessMethod(line, col, progress)
 endfunction
 
 function! s:ProcessMethodTail(line, col, progress)
+    if has_key(a:progress, 'initConsume')
+        let col = s:ProcessConsume(a:line, a:col, a:progress.initConsume)
+        if s:isComplete(a:progress.initConsume)
+            let a:progress['complete'] = 1
+            return col
+        elseif s:isFail(a:progress.initConsume)
+            let a:progress['complete'] = 0
+            return a:col
+        else
+            return col
+        endif
+    endif
+
     let firstMatch = matchlist(a:line, '^' . s:jWord, a:col)
     if firstMatch->len() > 0
         return a:col + len(firstMatch[0])
     endif
 
+
     let matchStr = a:progress['match']
-    if matchStr[len(matchStr) - 1] == '.'
+    if matchStr[len(matchStr) - 1] == '.' && a:line[a:col] != '<'
         let a:progress['complete'] = 0
         return a:col
     endif
 
     if a:line[a:col] == '.' || a:line[a:col] == '$'
+        return a:col + 1
+    elseif a:line[a:col] == '<'
+        let a:progress.initConsume = { 'type' : 'consume', 'consume' : 'init>' }
         return a:col + 1
     endif
     
@@ -702,6 +772,7 @@ function! s:ProcessInnerMethod(line, col, progress)
         endif
     else
         return s:ProcessInnerClassName(a:line, a:col, a:progress)
+    endif
 endfunction
 
 function! s:ProcessLambdaMethodName(line, col, progress)
@@ -786,7 +857,7 @@ function! s:ProcessStop(matchStat)
     if stopType == 'Breakpoint hit'
         let conditionBreakpoint = s:GetConditionBreakpoint(class, line) 
         if !empty(conditionBreakpoint)
-            let t:execution = s:CreateConditionCommand(conditionBreakpoint)
+            let t:executions = get(t:, 'executions', [])->add(s:CreateConditionCommand(conditionBreakpoint))
             return
         endif
     endif
@@ -805,17 +876,16 @@ endfunction
 
 function! s:CreateConditionCommand(breakpoint)
     let command = 'print ' . (a:breakpoint.javaExp)
-    if type(a:breakpoint.expectValue) == v:t_number
-        let conditionStr = ' '.(a:breakpoint.javaExp) . ' = ' . a:breakpoint.expectValue  
-    else
-        let conditionStr = ' '.(a:breakpoint.javaExp) . ' = "' . a:breakpoint.expectValue . '"'
-    endif
+    let conditionStr = ' '.(a:breakpoint.javaExp) . ' = ' . a:breakpoint.expectValue  
     return { 'command' : command, 'matchStat' : s:newConditionStat(conditionStr, a:breakpoint.outClass, a:breakpoint.line ) }
 endfunction
 
 function! s:GetConditionBreakpoint(class, line)
-    if exists('t:conditionBreakpoints')
-        return get(t:conditionBreakpoints, a:class . ':'.  a:line, {})
+    if exists('t:breakpoints')
+        let bp = get(t:breakpoints, a:class . ':'.  a:line, {})
+        if has_key(bp, 'javaExp')
+            return bp
+        endif
     endif
 endfunction
 
@@ -835,12 +905,12 @@ function! <SID>SetConditionBreakpoint(...)
     let outClass = s:Package(buf) . '.' . class
     let line = get(a:, '3', line('.'))
     "echom 'To set a breakpoint with condition : ' . exp . ' = ' . expectValue
-    let [outClass, line] = s:setBreakpoint(line, outClass)
+    call s:setBreakpoint(line, outClass)
 
-    if !exists('t:conditionBreakpoints')
-        let t:conditionBreakpoints = {}
+    if !exists('t:breakpoints')
+        let t:breakpoints = {}
     endif
-    let t:conditionBreakpoints[outClass .':'. line] = {
+    let t:breakpoints[outClass .':'. line] = {
                 \'javaExp' : exp, 
                 \'line' : line, 
                 \'outClass' : outClass, 
@@ -870,7 +940,6 @@ function! s:ChangeCurrentLine(outClass, line)
     endfor
 
     if empty(javaFile)
-        echom s:getSourcepathArg()
         echom 'Can not find ' . a:outClass
         return
     endif
@@ -883,6 +952,10 @@ function! s:ChangeCurrentLine(outClass, line)
         exec 'silent e ' .javaFile
     endif
     exec 'silent ' . a:line
+    if exists('t:stopMatchId')
+        call matchdelete(t:stopMatchId)
+    endif
+    let t:stopMatchId = matchaddpos('JdebugStop', [[a:line, 1]])
     exec 'silent ' . curWin.'wincmd w'
     exec 'redraw!'
 endfunction
@@ -991,7 +1064,7 @@ function! <SID>toggleBreakpoint(...)
 endfunction
 
 function! s:clearBreakpoint(line, qualifiedClass)
-    call term_sendkeys(t:jdbBuf, 'clear '. qualifiedClass . ':'.a:line."\<cr>")
+    call term_sendkeys(t:jdbBuf, 'clear '. a:qualifiedClass . ':'.a:line."\<cr>")
 endfunction
 
 function! s:setBreakpoint(line, qualifiedClass)
