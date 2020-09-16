@@ -36,7 +36,7 @@ WinRestore
 WinMove, 1600, 0
 WinMaximize
 Run, "http://54.84.45.75:8080/vitria-oi/app/?min=false#uri=/app/ax/space/Digital Operations/axv/DO - Signal Onboarding Comp"
-
+return
 
 
 ^#,::
@@ -58,6 +58,7 @@ WinWait, SumatraPDF
 WinRestore
 WinMove, 0, 0
 WinMaximize
+return
 
 
 switch2Desktop(id){
