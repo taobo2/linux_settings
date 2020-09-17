@@ -385,8 +385,6 @@ augroup statusBar
     autocmd!
     autocmd BufReadPre * silent! unlet g:statusFileNames[expand('%:p')]
     autocmd BufDelete * silent! unlet g:statusFileNames[expand('%:p')]
-    autocmd InsertEnter * silent! lcd %:h    " when new empty file, there are errors to silent
-    autocmd InsertLeave * silent! lcd -
 augroup end
 
 
@@ -507,5 +505,24 @@ augroup recentBufsGroup
 
 augroup end
 
-"====================== Jdb ========================
-"
+
+"========================= Auto Complete ==========================================
+function PopRelativePath()
+    autocmd CompleteDone * ++once call RevertRelativePath()
+    let b:lastCwd = getcwd()
+    exe 'lcd %:h'
+    return "\<C-x>\<C-f>"
+endfunction
+
+function RevertRelativePath()
+    if exists('b:lastCwd')
+        exe 'lcd ' . b:lastCwd
+        unlet b:lastCwd
+    endif
+endfunction
+
+augroup PopRelative
+    autocmd!
+augroup END
+
+inoremap <expr> <C-x><C-x> PopRelativePath()
