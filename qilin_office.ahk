@@ -1,4 +1,4 @@
-﻿#z::Run https://www.autohotkey.com  ; Win+Z
+﻿#z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\qilin_office.ahk  ; Win+Z
 
 ^!n::  ; Ctrl+Alt+N
 if WinExist("Untitled - Notepad")
@@ -62,7 +62,8 @@ return
 
 
 switch2Desktop(id){
-    RegRead, cur, HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\SessionInfo\1\VirtualDesktops, CurrentVirtualDesktop
+    session := getSessionId()
+    RegRead, cur, HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\SessionInfo\%session%\VirtualDesktops, CurrentVirtualDesktop
     RegRead, all, HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops, VirtualDesktopIDs
     ix := floor(InStr(all,cur) / strlen(cur))
 
@@ -78,3 +79,24 @@ switch2Desktop(id){
         }
     }
 }
+
+;
+; This functions finds out ID of current session.
+;
+getSessionId()
+{
+    ProcessId := DllCall("GetCurrentProcessId", "UInt")
+    if ErrorLevel {
+        OutputDebug, Error getting current process id: %ErrorLevel%
+        return
+    }
+    OutputDebug, Current Process Id: %ProcessId%
+    DllCall("ProcessIdToSessionId", "UInt", ProcessId, "UInt*", SessionId)
+    if ErrorLevel {
+        OutputDebug, Error getting session id: %ErrorLevel%
+        return
+    }
+    OutputDebug, Current Session Id: %SessionId%
+    return SessionId
+}
+
