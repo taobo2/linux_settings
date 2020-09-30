@@ -1,8 +1,8 @@
 currentDir(){
     if svn info > /dev/null 2>&1; then
-        format $(svn info 2>/dev/null | grep 'Relative URL' | cut -d: -f2)
+        echo $(svn info 2>/dev/null | grep 'Relative URL' | cut -d: -f2)
     else
-        echo "${PWD##*/}"
+        echo "$1"
     fi
 }
 
@@ -24,10 +24,9 @@ export HISTCONTROL="ignorespace"
 export PATH=$PATH:./
 
 if [[ "$TERM" = *"screen"* ]] || [ ! -z "$VIMRUNTIME" ]; then
-  export PS1='\[$(tput setab 6)\]\[$(tput setaf 0)\]\t \u@\h \W $ \[$(tput sgr0)\]'
+    export PS1='\[$(tput setab 6)\]\[$(tput setaf 0)\]\t \u@\h \W $ \[$(tput sgr0)\]'
 else
-  export PS1='\[$(tput bold)$(tput setaf 2)\]\t \u@\h \[$(tput setaf 4)\]$(currentDir) $ \[$(tput sgr0)\]'
-
+    export PS1='\[$(tput bold)$(tput setaf 2)\]\t \u@\h \[$(tput setaf 4)\]$(currentDir '"'\w'"') \[$(tput sgr0)\]\n$ '
 fi 
 export EDITOR=vim
 export TZ=Asia/Shanghai
