@@ -42,10 +42,12 @@ fi
 
 if [  -d $setDir ]
 then 
-    echo -e 'It seems that the setup has been run.\n'
-    read -p 'Do you want to rerun it?(y/n)' run
-    if [ -z $run ] || ([ $run != 'yes' ] && [ $run != 'y' ])
-    then exit 0
+    if [ "$1" != "-f" ]; then
+        echo -e 'It seems that the setup has been run.\n'
+        read -p 'Do you want to rerun it?(y/n)' run
+        if [ -z $run ] || ([ $run != 'yes' ] && [ $run != 'y' ])
+        then exit 0
+        fi
     fi
     unsetup   
 fi
