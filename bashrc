@@ -1,6 +1,12 @@
 currentDir(){
     if svn info > /dev/null 2>&1; then
         echo $(svn info 2>/dev/null | grep 'Relative URL' | cut -d: -f2)
+    elif git branch --show-current > /dev/null 2>&1; then
+        if [ $(git rev-parse --show-toplevel) == ${PWD} ]; then
+            echo $(git rev-parse --show-toplevel | xargs basename):$(git branch --show-current)
+        else
+            echo $(git rev-parse --show-toplevel | xargs basename):$(git branch --show-current):$(basename $PWD)
+        fi
     else
         echo "$1"
     fi
