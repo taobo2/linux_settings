@@ -18,9 +18,7 @@ if WinExist("Edge")
 
 Run https://www.youtube.com/
 WinWait, YouTube
-WinRestore
-WinMove, 0, 0
-WinMaximize
+move2Left()
 
 Run, %ComSpec% /c start msedge --start-maximized --new-window http://54.84.45.75:8080/vitria-oi/app/?min=false&min.ax=false&enableGridster=true
 Loop{
@@ -32,10 +30,8 @@ Loop{
         break
 }
 
-WinRestore
-WinMove, 1600, 0
-WinMaximize
-Run, "http://54.84.45.75:8080/vitria-oi/app/?min=false#uri=/app/ax/space/Digital Operations/axv/DO - Signal Onboarding Comp"
+move2Right()
+Run, "http://54.84.45.75:8080/vitria-oi/app/?min=false#uri=/app/ax/space/Digital`%20Operations/axv/DO`%20-`%20Signal`%20Onboarding`%20Comp"
 return
 
 
@@ -49,15 +45,11 @@ if WinExist("Adobe") or WinExist("SumatraPDF")
 
 Run, %ComSpec% /c start acrord32 D:\dropbox\Dropbox\books\Introduction-to-Calculus-and-Analysis-Volume-2.pdf
 WinWait, Adobe
-WinRestore
-WinMove, 1600, 0
-WinMaximize
+move2Right()
 
 Run, "D:\dropbox\Dropbox\books\Introduction-to-Calculus-and-Analysis-Volume-2 (1).pdf"
 WinWait, SumatraPDF
-WinRestore
-WinMove, 0, 0
-WinMaximize
+move2Left()
 return
 
 
@@ -100,3 +92,40 @@ getSessionId()
     return SessionId
 }
 
+move2Left()
+{
+    WinRestore
+    SysGet, MonitorCount, MonitorCount
+    if (%MonitorCount% = 1)
+    {
+        Send #{Left}
+        Send {Esc}
+    }else
+    {
+        WinMove,0,0
+        WinMaximize
+    }
+}
+
+move2Right()
+{
+    WinRestore
+    SysGet, MonitorCount, MonitorCount
+    if (%MonitorCount% = 1)
+    {
+        Send #{Right}
+        Send {Esc}
+    }else
+    {
+        Loop, %MonitorCount%
+        {
+            SysGet, MonitorWorkArea, MonitorWorkArea, %A_Index%
+            if ( MonitorWorkAreaLeft  > 0 )
+            {
+                WinMove, %MonitorWorkAreaLeft%, %MonitorWorkAreaTop%
+                WinMaximize
+                return
+            }
+        }
+    }
+}
