@@ -1,4 +1,4 @@
-﻿#z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\qilin_office.ahk  ; Win+Z
+﻿#z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\work_space.ahk  ; Win+Z
 
 ^!n::  ; Ctrl+Alt+N
 if WinExist("Untitled - Notepad")
@@ -43,11 +43,11 @@ SetTitleMatchMode 2
 if WinExist("Adobe") or WinExist("SumatraPDF")
     return
 
-Run, %ComSpec% /c start acrord32 D:\dropbox\Dropbox\books\Introduction-to-Calculus-and-Analysis-Volume-2.pdf
+Run, %ComSpec% /c start acrord32 
 WinWait, Adobe
 move2Right()
 
-Run, "D:\dropbox\Dropbox\books\Introduction-to-Calculus-and-Analysis-Volume-2 (1).pdf"
+Run, %ComSpec% /c start SumatraPDF
 WinWait, SumatraPDF
 move2Left()
 return
@@ -96,7 +96,7 @@ move2Left()
 {
     WinRestore
     SysGet, MonitorCount, MonitorCount
-    if (%MonitorCount% = 1)
+    if ( MonitorCount = 1)
     {
         Send #{Left}
         Send {Esc}
@@ -111,7 +111,7 @@ move2Right()
 {
     WinRestore
     SysGet, MonitorCount, MonitorCount
-    if (%MonitorCount% = 1)
+    if ( MonitorCount = 1)
     {
         Send #{Right}
         Send {Esc}
