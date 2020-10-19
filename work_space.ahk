@@ -1,4 +1,5 @@
 ﻿#z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\work_space.ahk  ; Win+Z
+^#/::Reload
 
 ^!n::  ; Ctrl+Alt+N
 if WinExist("Untitled - Notepad")
@@ -13,25 +14,18 @@ Sleep, 1000
 
 SetTitleMatchMode 2
 
-if WinExist("Edge")
+if WinExist("Edge"){
+    activateAll("Signal Onboarding")
     return
+}
 
-Run https://www.youtube.com/
-WinWait, YouTube
+Run, %ComSpec% /c start msedge --start-maximized --new-window "http://54.84.45.75:8080/vitria-oi/app/?min=false#uri=/app/ax/space/Digital`%20Operations/axv/DO`%20-`%20Signal`%20Onboarding`%20Comp`%20V2" 
+Sleep, 1000
 move2Left()
 
 Run, %ComSpec% /c start msedge --start-maximized --new-window http://54.84.45.75:8080/vitria-oi/app/?min=false&min.ax=false&enableGridster=true
-Loop{
-    WinWait, Vitria,,1
-    if !ErrorLevel
-        break
-    WinWait, User Login,, 1
-    if !ErrorLevel
-        break
-}
-
+Sleep, 1000
 move2Right()
-Run, "http://54.84.45.75:8080/vitria-oi/app/?min=false#uri=/app/ax/space/Digital`%20Operations/axv/DO`%20-`%20Signal`%20Onboarding`%20Comp"
 return
 
 
@@ -51,7 +45,6 @@ Run, %ComSpec% /c start SumatraPDF
 WinWait, SumatraPDF
 move2Left()
 return
-
 
 switch2Desktop(id){
     session := getSessionId()
@@ -94,7 +87,7 @@ getSessionId()
 
 move2Left()
 {
-    WinRestore
+    WinRestore,A
     SysGet, MonitorCount, MonitorCount
     if ( MonitorCount = 1)
     {
@@ -102,14 +95,14 @@ move2Left()
         Send {Esc}
     }else
     {
-        WinMove,0,0
-        WinMaximize
+        WinMove,A,,0,0
+        WinMaximize,A
     }
 }
 
 move2Right()
 {
-    WinRestore
+    WinRestore,A
     SysGet, MonitorCount, MonitorCount
     if ( MonitorCount = 1)
     {
@@ -122,10 +115,19 @@ move2Right()
             SysGet, MonitorWorkArea, MonitorWorkArea, %A_Index%
             if ( MonitorWorkAreaLeft  > 0 )
             {
-                WinMove, %MonitorWorkAreaLeft%, %MonitorWorkAreaTop%
-                WinMaximize
+                WinMove,A,, %MonitorWorkAreaLeft%, %MonitorWorkAreaTop%
+                WinMaximize,A
                 return
             }
         }
+    }
+}
+
+activateAll(winTitle){
+    WinGet,Windows,List,%winTitle%
+    Loop,%Windows%
+    {
+        this_id := "ahk_id " . Windows%A_Index%
+        WinActivate, %this_id%
     }
 }
