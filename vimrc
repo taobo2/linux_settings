@@ -507,22 +507,117 @@ augroup end
 
 
 "========================= Auto Complete ==========================================
-function PopRelativePath()
+"== path ==
+function! PopRelativePath()
     autocmd CompleteDone * ++once call RevertRelativePath()
     let b:lastCwd = getcwd()
     exe 'lcd %:h'
     return "\<C-x>\<C-f>"
 endfunction
 
-function RevertRelativePath()
+function! RevertRelativePath()
     if exists('b:lastCwd')
         exe 'lcd ' . b:lastCwd
         unlet b:lastCwd
     endif
 endfunction
 
-augroup PopRelative
-    autocmd!
-augroup END
-
 inoremap <expr> <C-x><C-x> PopRelativePath()
+
+"== separator == 
+function! GetIdx(line, char, nth)
+    let start = 0
+    for i in range(a:nth)
+        let index = a:line->stridx(a:char, start)
+        if index  == -1
+            return -1
+        endif
+        let start = index + 1
+    endfor
+
+    return a:line->stridx(a:char, start)
+endfunction
+
+function! AlignSeparator(findstart,base)
+    if a:findstart
+        let index = col('.') - 3
+        if index >= 0 && getline('.')[index] != ' '
+            return -3
+        endif
+
+        return col('.') - 2
+    endif
+
+    let prevLine = (line('.') - 1)->getline()
+    let start    = col('.') - 1
+    let index    = start
+    let items    = []
+    while 1
+        let index = prevLine->stridx(a:base, index . ' ')       
+        if index == -1
+            break
+        endif
+
+        let candiate = repeat(' ', index - start) . a:base
+        call add(items, candiate)
+        let index = index + 1
+    endwhile
+
+    for s in g:separators
+        if s[0] == a:base
+            let items = items + s[1]
+            break
+        endif
+    endfor
+
+    return items 
+endfunction 
+
+set completefunc=AlignSeparator
+
+let s:equal = ['=', ['==', '===']]
+let s:colon = [':', []]
+let g:separators = [s:equal, s:colon]
+
+augroup Separator
+    autocmd!
+    autocmd Filetype java,javascript,css,vim inoremap = =<C-x><C-u>
+    autocmd Filetype java,javascript,css,vim inoremap : :<C-x><C-u>
+augroup end
+
+function! AlignCol(separator) range
+    let separator = a:separator
+    let nth = 0
+    while 1
+        let lines = getline(a:firstline, a:lastline)
+        if lines->len() <= 1
+            return
+        endif
+
+        let cols = lines->map("GetIdx(v:val,'" . separator . "'," . nth . ")")
+
+        let maxCol = cols->max()
+        if maxCol == -1
+            break
+        endif
+
+        for row in range(a:firstline, a:lastline)
+            let col = cols[row - a:firstline]
+            if col == -1
+                continue
+            endif  
+
+            let spaces = maxCol - col
+            if spaces == 0
+                continue
+            endif
+
+            execute "normal " . row . "G" . (col + 1) . "|" . spaces . "i "
+        endfor
+
+        let nth = nth + 1
+    endwhile
+endfunction
+
+command -range -nargs=1 AlignCol <line1>,<line2>call AlignCol(<q-args>)
+
