@@ -149,30 +149,6 @@ augroup END
 
 "command Wa :wa|!ant
 
-function CC(...)
-    if a:0 > 0
-        let l:shift = a:1
-    else
-        let l:shift = 0
-    endif
-    let l:current = getline(".")[ col(".") - 1 + l:shift ]
-    return l:current
-endfunction
-
-augroup autocode
-    autocmd!
-    autocmd FileType javascript,java inoremap <buffer> <expr> ( CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "()<left>" : "("
-    autocmd FileType javascript,java inoremap <buffer> <expr> [ CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "[]<left>" : "["
-    autocmd FileType javascript,java inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
-    autocmd FileType javascript,java inoremap <buffer> <expr> ' CC() == "" \|\| stridx("}]);\"", CC()) >= 0 ? "''<left>" : CC() == "'" ? "<right>" : "'"
-    autocmd FileType javascript,java inoremap <buffer> <expr> " CC() == "" \|\| stridx("}]);'", CC()) >= 0 ? "\"\"<left>" : CC() == "\"" ? "<right>" : "\""
-    autocmd FileType javascript,java inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
-
-    autocmd FileType javascript,java inoremap <buffer> <expr> ) CC() == ")" ? "<right>" : ")"
-    autocmd FileType javascript,java inoremap <buffer> <expr> ] CC() == "]" ? "<right>" : "]"
-    autocmd FileType javascript,java inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
-augroup END
-
 "update all windows' statuslines when creating a new window
 augroup statusupdate
     autocmd!
@@ -314,9 +290,29 @@ nnoremap <silent> <F4> :call ToggleFold()<cr>
 "
 "F3
 "align code according to some letter
-vnoremap <silent> <F3>= :!column -t -s '=' -o '='<cr>
-vnoremap <silent> <F3>: :!column -t -s ':' -o ':'<cr>
-vnoremap <silent> <F3><Space> :!column -t -s ' ' -o ' '<cr>
+inoremap <F3>:  <C-o><S-v>{:AlignCol:<cr>
+inoremap <F3>    <C-o><S-v>{:AlignCol=<cr>
+inoremap <F3>:  <S-v>{:AlignCol:<cr>
+inoremap <F3>    <S-v>{:AlignCol=<cr>
+vnoremap <F3>: :AlignCol:<cr>
+vnoremap <F3>  :AlignCol=<cr>
+
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <S-F3>=[1;2R
+endif 
+
+inoremap <S-F3>:  <C-o><S-v>}:AlignCol:<cr>
+inoremap <S-F3>    <C-o><S-v>}:AlignCol=<cr>
+noremap <S-F3>:  <S-v>}:AlignCol:<cr>
+noremap <S-F3>    <S-v>}:AlignCol=<cr>
+
+"compact currentline's space
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <F31>=[1;5R
+else
+    set <F31>=<C-F3>
+endif 
+noremap <F31> :call CompactLine()<cr>
 
 "********************* make ******************
 augroup makeconfig
@@ -524,6 +520,24 @@ endfunction
 
 inoremap <expr> <C-x><C-x> PopRelativePath()
 
+"Auto Brace
+function CC(...)
+    if a:0 > 0
+        let l:shift = a:1
+    else
+        let l:shift = 0
+    endif
+    let l:current = getline(".")[ col(".") - 1 + l:shift ]
+    return l:current
+endfunction
+
+augroup autoBrace
+    autocmd!
+    autocmd FileType javascript,java,autohotkey inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
+    autocmd FileType javascript,java,autohotkey inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
+    autocmd FileType javascript,java,autohotkey inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
+augroup END
+
 "== separator == 
 function! GetIdx(line, char, nth)
     let start = 0
@@ -537,53 +551,6 @@ function! GetIdx(line, char, nth)
 
     return a:line->stridx(a:char, start)
 endfunction
-
-function! AlignSeparator(findstart,base)
-    if a:findstart
-        let index = col('.') - 3
-        if index >= 0 && getline('.')[index] != ' '
-            return -3
-        endif
-
-        return col('.') - 2
-    endif
-
-    let prevLine = (line('.') - 1)->getline()
-    let start    = col('.') - 1
-    let index    = start
-    let items    = []
-    while 1
-        let index = prevLine->stridx(a:base, index . ' ')       
-        if index == -1
-            break
-        endif
-
-        let candiate = repeat(' ', index - start) . a:base
-        call add(items, candiate)
-        let index = index + 1
-    endwhile
-
-    for s in g:separators
-        if s[0] == a:base
-            let items = items + s[1]
-            break
-        endif
-    endfor
-
-    return items 
-endfunction 
-
-set completefunc=AlignSeparator
-
-let s:equal = ['=', ['==', '===']]
-let s:colon = [':', []]
-let g:separators = [s:equal, s:colon]
-
-augroup Separator
-    autocmd!
-    autocmd Filetype java,javascript,css,vim inoremap = =<C-x><C-u>
-    autocmd Filetype java,javascript,css,vim inoremap : :<C-x><C-u>
-augroup end
 
 function! AlignCol(separator) range
     let separator = a:separator
@@ -620,4 +587,15 @@ function! AlignCol(separator) range
 endfunction
 
 command -range -nargs=1 AlignCol <line1>,<line2>call AlignCol(<q-args>)
+
+" Compact line
+function! CompactLine()
+    let col = 0
+    exe 'normal 0f '
+    while col < col('.')
+        exe "normal dwi \<esc>l"
+        let col = col('.')
+        exe 'normal f '
+    endwhile
+endfunction
 
