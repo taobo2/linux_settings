@@ -169,40 +169,41 @@ augroup END
 "    endif
 "endfunction
 "
-""toggle between current/last-accessed windows
-"tnoremap <silent> <F3> <c-w>:let t:jumping=1<cr><c-w>p
-"nnoremap <silent> <F3> :let t:jumping=1<cr><c-w>p
-"inoremap <silent> <F3> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
-"augroup windowjump
-"    autocmd!
-"    autocmd WinEnter * :call OnWinEnter()
-"augroup END
 
+""""""""""""""""""""""""""""Bind Function Keys""""""""""
+"F2
+"********************* operations about jump ******************
+"
+"
+" map <F2> and <S-F2> to jump between locations in a quickfix list, or
+" differences if in window in diff mode
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <S-F2>=[1;2Q
+endif 
+
+nnoremap <expr> <silent> <F2>   (&diff ? "]c" : ":cnext\<CR>")
+nnoremap <expr>  <silent> <S-F2> (&diff ? "[c" : ":cprev\<CR>")
+
+"A-F2
 "toggle between current/last-accessed tabs
 if !exists('g:lasttab')
   let g:lasttab = 1
 endif
 
-nnoremap <silent> <F2> :exe "tabn ".g:lasttab<CR>
-inoremap <silent> <F2> <esc>:exe "tabn ".g:lasttab<CR>
-tnoremap <silent> <F2> <c-w>:exe "tabn ".g:lasttab<CR>
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <F22>=[1;3Q
+else
+    set <F22>=<M-F2>
+endif
+
+nnoremap <silent> <F22> :exe "tabn ".g:lasttab<CR>
+inoremap <silent> <F22> <esc>:exe "tabn ".g:lasttab<CR>
+tnoremap <silent> <F22> <c-w>:exe "tabn ".g:lasttab<CR>
 augroup tabjump
     autocmd!
     au TabLeave * let g:lasttab = tabpagenr()
 augroup END
 
-if $TERM_PROGRAM == "Apple_Terminal"
-    set <S-F5>=[25~
-endif
-" map <F5> and <S-F5> to jump between locations in a quickfix list, or
-" differences if in window in diff mode
-nnoremap <expr> <silent> <F5>   (&diff ? "]c" : ":cnext\<CR>")
-nnoremap <expr>  <silent> <S-F5> (&diff ? "[c" : ":cprev\<CR>")
-
-""""""""""Bind Function Keys""""""""""
-"F2
-"**************************** operations about jump ******************
-"
 "C-F2
 "max a window(jump to a new tab which only contains current window content)
 
@@ -218,14 +219,14 @@ function ToggleWin()
 endfunction
 
 if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
-    set <F22>=[1;5Q
+    set <F21>=[1;5Q
 else
-    set <F22>=<C-F2>
+    set <F21>=<C-F2>
 endif 
 
-nnoremap <silent> <F22> :call ToggleWin()<cr>
+nnoremap <silent> <F21> :call ToggleWin()<cr>
 
-"S-F2
+"<Leader>F2
 "toggle between current/last-accessed windows
 
 function OnWinEnter()
@@ -241,15 +242,9 @@ function OnWinEnter()
     endif
 endfunction
 
-if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
-    set <F32>=[1;2Q
-else
-    set <F32>=<S-F2>
-endif 
-
-tnoremap <silent> <F32> <c-w>:let t:jumping=1<cr><c-w>p
-nnoremap <silent> <F32> :let t:jumping=1<cr><c-w>p
-inoremap <silent> <F32> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
+tnoremap <silent> <Leader><F2> <c-w>:let t:jumping=1<cr><c-w>p
+nnoremap <silent> <Leader><F2> :let t:jumping=1<cr><c-w>p
+inoremap <silent> <Leader><F2> <esc>:let t:jumping=1<cr>:let w:jumpmode='i'<cr><c-w>p
 augroup windowjump
     autocmd!
     autocmd WinEnter * :call OnWinEnter()
@@ -259,6 +254,34 @@ augroup navigateCode
     autocmd!
     autocmd Filetype javascript setlocal suffixesadd=.js "for gf
 augroup END
+
+"F3
+"====================operation about format code==================
+"
+"align code according to some letter
+inoremap <F3>:  <C-o><S-v>{:AlignCol:<cr>
+inoremap <F3>    <C-o><S-v>{:AlignCol=<cr>
+inoremap <F3>:  <S-v>{:AlignCol:<cr>
+inoremap <F3>    <S-v>{:AlignCol=<cr>
+vnoremap <F3>: :AlignCol:<cr>
+vnoremap <F3>  :AlignCol=<cr>
+
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <S-F3>=[1;2R
+endif 
+
+inoremap <S-F3>:  <C-o><S-v>}:AlignCol:<cr>
+inoremap <S-F3>    <C-o><S-v>}:AlignCol=<cr>
+noremap <S-F3>:  <S-v>}:AlignCol:<cr>
+noremap <S-F3>    <S-v>}:AlignCol=<cr>
+
+"compact currentline's space
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <F31>=[1;5R
+else
+    set <F31>=<C-F3>
+endif 
+noremap <F31> :call CompactLine()<cr>
 
 "F4
 "*********************** operations about fold ******************
@@ -285,34 +308,12 @@ function ToggleFold()
 endfunction
 nnoremap <silent> <F4> :call ToggleFold()<cr>
 
-"F3
-"operation about format code
+"F5
+"*************** insert code *****************
 "
-"F3
-"align code according to some letter
-inoremap <F3>:  <C-o><S-v>{:AlignCol:<cr>
-inoremap <F3>    <C-o><S-v>{:AlignCol=<cr>
-inoremap <F3>:  <S-v>{:AlignCol:<cr>
-inoremap <F3>    <S-v>{:AlignCol=<cr>
-vnoremap <F3>: :AlignCol:<cr>
-vnoremap <F3>  :AlignCol=<cr>
-
-if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
-    set <S-F3>=[1;2R
-endif 
-
-inoremap <S-F3>:  <C-o><S-v>}:AlignCol:<cr>
-inoremap <S-F3>    <C-o><S-v>}:AlignCol=<cr>
-noremap <S-F3>:  <S-v>}:AlignCol:<cr>
-noremap <S-F3>    <S-v>}:AlignCol=<cr>
-
-"compact currentline's space
-if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
-    set <F31>=[1;5R
-else
-    set <F31>=<C-F3>
-endif 
-noremap <F31> :call CompactLine()<cr>
+"F5
+"default register history
+nnoremap <silent> <F5> :call PopupRegHistory()<cr>
 
 "********************* make ******************
 augroup makeconfig
@@ -324,9 +325,9 @@ augroup END
 
 
 "********************** Indention and tabs *****************
-set tabstop=4 "the length of a tab char
+set tabstop    =4 "the length of a tab char
 set softtabstop=4 "affects what happens when you press the <TAB> or <BS> keys. 
-set shiftwidth=4 "affects what happens when you press >>, << or ==. It also affects how automatic indentation works.
+set shiftwidth =4 "affects what happens when you press >>, << or ==. It also affects how automatic indentation works.
 set expandtab
 
 augroup set_indention
@@ -382,125 +383,6 @@ augroup statusBar
     autocmd BufReadPre * silent! unlet g:statusFileNames[expand('%:p')]
     autocmd BufDelete * silent! unlet g:statusFileNames[expand('%:p')]
 augroup end
-
-
-
-"********************** Recent Tabs *****************
-function CreateRecentWindow()
-    if !exists("t:recentBufs") || t:recentBufs != 1
-        let buffers = tabpagebuflist()->filter('index(g:recentBufs_visitBufList, v:val)<0') + g:recentBufs_visitBufList
-        exe "tabnew %" 
-        let g:recentBufs_visitBufList = buffers
-        let t:recentBufs = 1
-    endif
-
-    let winNr = winnr()
-
-    if winnr('$') % (&columns / 80) == 0
-        exe "noautocmd botright split"
-    else
-        exe "noautocmd ". winnr('$') . "wincmd w"
-        exe "noautocmd vsplit"
-    endif
-    
-    exe "noautocmd ". winNr ."wincmd w"
-
-    call UpdateRecentLayout()
-endfunction
-
-function DeleteRencentWindow()
-    if gettabvar(tabpagenr(), 'recentBufs', '') != 1
-        return
-    endif
-    let winNr = winnr()
-
-    exe "noautocmd ". winnr('$') . "wincmd w"
-    exe "noautocmd close"
-
-    exe "noautocmd ". winNr ."wincmd w"
-
-    call UpdateRecentLayout()
-endfunction
-
-function RecordBufVisit()
-    let existIdx = index(g:recentBufs_visitBufList, bufnr('%'))
-    if existIdx > -1
-        call remove(g:recentBufs_visitBufList, existIdx) "If a function is used alone, prefix it with call. It is to distinguish with ex-command introduced by vi and ed
-    endif
-
-    call add(g:recentBufs_visitBufList, bufnr('%'))
-endfunction
-
-function UpdateRecentLayout()
-    let buf2Open = Buf2Open()
-
-    let winNr = winnr()
-
-
-    for buf in buf2Open
-        exe 'noautocmd ' . WinNr2Replace() . 'wincmd w'
-        exe 'noautocmd b' . buf
-    endfor
-    exe "noautocmd ". winNr . "wincmd w"
-endfunction
-
-function Buf2Open()
-    return g:recentBufs_visitBufList[ max([-len(g:recentBufs_visitBufList), -winnr('$')]):-1 ]
-                \->filter('tabpagebuflist()->index(v:val) < 0')
-                \->reverse()
-endfunction
-
-function WinNr2Replace()
-
-    let wins = range(1, winnr('$'))->sort("RecentVisitLast")
-
-    return wins[0]
-endfunction
-
-function RecentVisitLast(a, b)
-    if winnr() == a:a
-        return 1
-    elseif winnr() == a:b
-        return -1
-    endif
-
-    if winbufnr(a:a) == winbufnr(a:b)
-        return a:b - a:a
-    endif
-
-    let aIsEdit = winbufnr(winnr()) == winbufnr(a:a)
-    let aRepeat = aIsEdit || range(1, a:a - 1)->map('winbufnr(v:val)')->index(winbufnr(a:a)) >= 0
-    let bIsEdit = winbufnr(winnr()) == winbufnr(a:b)
-    let bRepeat = bIsEdit || range(1, a:b - 1)->map('winbufnr(v:val)')->index(winbufnr(a:b)) >= 0
-    if aRepeat != bRepeat
-        return bRepeat - aRepeat
-    endif
-
-    let result = index(g:recentBufs_visitBufList, winbufnr(a:a)) - index(g:recentBufs_visitBufList, winbufnr(a:b))
-    return result
-endfunction
-
-function RemoveDeleteBuf(buf)
-    return g:recentBufs_visitBufList->filter('v:val!=' . a:buf)
-endfunction
-
-nnoremap <F6> :call CreateRecentWindow()<cr>
-nnoremap <S-F6> :call DeleteRencentWindow()<cr>
-
-let g:recentBufs_visitBufList = []
-
-augroup recentBufsGroup
-    autocmd!
-
-    autocmd BufEnter *  call RecordBufVisit() 
-
-    "Called when a buffer is shown in a window
-    autocmd BufWinEnter *  call RecordBufVisit() | if gettabvar(tabpagenr(), 'recentBufs', '') == 1 | call UpdateRecentLayout() | endif
-
-    autocmd BufDelete * call RemoveDeleteBuf(expand('<abuf>'))
-
-augroup end
-
 
 "========================= Auto Complete ==========================================
 "== path ==
@@ -597,5 +479,44 @@ function! CompactLine()
         let col = col('.')
         exe 'normal f '
     endwhile
+endfunction
+
+"save yank items
+let g:regHistory = []
+let g:regSize = 100
+augroup Yank
+    autocmd!
+    autocmd TextYankPost * if v:event.regname == '' | call SaveDefaultRegister(v:event.regcontents, v:event.regtype) | endif
+augroup end
+
+function! SaveDefaultRegister(contents, type)
+    let empty = a:contents->copy()->map('v:val->empty()')->min()
+    if empty
+        return
+    endif
+
+    let elem = #{ content : a:contents, type : a:type }
+
+    let g:regHistory = ([ elem ] + g:regHistory)[0:g:regSize - 1]
+endfunction
+
+function! PopupRegHistory()
+    if g:regHistory->len() == 0
+        return
+    endif
+
+    let menuItems = g:regHistory->copy()
+                \->map('v:val.content->len() == 1 ? v:val.content[0] : v:val.content[0] . " ..."')
+    call popup_menu(menuItems, #{ callback : 'OnRegSelected' })
+endfunction
+
+function! OnRegSelected(id, result)
+    if a:result == -1
+        return
+    endif
+
+    let elem = g:regHistory[a:result - 1]
+    call setreg('', elem.content, elem.type)
+    exe 'normal p'
 endfunction
 
