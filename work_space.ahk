@@ -8,6 +8,7 @@ else
     Run Notepad
 return
 
+;Signal Onboarding
 ^#m::
 switch2Desktop(3)
 Sleep, 1000
@@ -22,6 +23,14 @@ if WinExist("Edge"){
 Run, %ComSpec% /c start msedge --start-maximized --new-window "http://54.84.45.75:8080/vitria-oi/app/?min=false#uri=/app/ax/space/Digital`%20Operations/axv/DO`%20-`%20Signal`%20Onboarding`%20Comp`%20V2" 
 Sleep, 1000
 move2Left()
+
+if WinExist("User Login"){
+    Send !d
+    Send login_vitria
+    Send +{Tab}
+    Sleep, 100
+    Send {Enter}
+}
 
 Run, %ComSpec% /c start msedge --start-maximized --new-window http://54.84.45.75:8080/vitria-oi/app/?min=false&min.ax=false&enableGridster=true
 Sleep, 1000
