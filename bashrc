@@ -1,3 +1,7 @@
+if [ -f ~/.*.bashrc ]; then
+    for f in ~/.*.bashrc; do source $f; done
+fi
+
 currentDir(){
     if svn info > /dev/null 2>&1; then
         echo $(svn info 2>/dev/null | grep 'Relative URL' | cut -d: -f2)
@@ -37,4 +41,24 @@ fi
 export EDITOR=vim
 export TZ=Asia/Shanghai
 
+sudo() {
+    if [ "apt" == "$1" ] || [ "apt-get" == "$1" ];then
+        command sudo http_proxy="$_http_proxy" https_proxy="$_https_proxy" "$@"
+    else
+        command sudo "$@"
+    fi
+}
 
+if [ -n "$_all_proxy" ];then
+    alias git="all_proxy=$_all_proxy git"
+    alias brew="all_proxy=$_all_proxy brew"
+else
+    alias git="http_proxy=$_http_proxy https_proxy=$_https_proxy git"
+    alias brew="http_proxy=$_http_proxy https_proxy=$_https_proxy brew"
+fi
+
+alias npm="http_proxy=$_http_proxy https_proxy=$_https_proxy npm"
+
+alias mysql="rlwrap mysql"
+
+alias jdb="rlwrap jdb"
