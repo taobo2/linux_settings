@@ -25,10 +25,10 @@ Sleep, 1000
 move2Left()
 
 if WinExist("User Login"){
+    Sleep, 1000
 	Send btao
 	Send {Tab}
 	Send vitria{Enter}
-	Sleep, 500
 }
 
 Run, %ComSpec% /c start msedge --start-maximized --new-window http://54.84.45.75:8080/vitria-oi/app/?min=false&min.ax=false&enableGridster=true
