@@ -347,7 +347,7 @@ augroup END
 
 "********************** set status bar *****************
 function FileName()
-    let infoes = systemlist('svn info ' . expand('%'))
+    let infoes = systemlist('svn info "' . expand('%') .'"')
 
     if v:shell_error == 1
         return expand('%:t') "t means tail, which is filename
