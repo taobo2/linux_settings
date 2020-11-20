@@ -31,7 +31,6 @@ set autoread
 set backup
 "./ is replaced with the path of the current file
 set tags+=./.tags;
-set pastetoggle=<F6>
 "allow hide modified buffer
 set hidden
 
@@ -192,8 +191,6 @@ endif
 
 if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
     set <F22>=[1;3Q
-else
-    set <F22>=<M-F2>
 endif
 
 nnoremap <silent> <F22> :exe "tabn ".g:lasttab<CR>
@@ -220,8 +217,6 @@ endfunction
 
 if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
     set <F21>=[1;5Q
-else
-    set <F21>=<C-F2>
 endif 
 
 nnoremap <silent> <F21> :call ToggleWin()<cr>
@@ -278,8 +273,6 @@ noremap <S-F3>    <S-v>}:AlignCol=<cr>
 "compact currentline's space
 if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
     set <F31>=[1;5R
-else
-    set <F31>=<C-F3>
 endif 
 noremap <F31> :call CompactLine()<cr>
 
@@ -314,6 +307,23 @@ nnoremap <silent> <F4> :call ToggleFold()<cr>
 "F5
 "default register history
 nnoremap <silent> <F5> :call PopupRegHistory()<cr>
+
+"<C-F5>
+"paste from clipboard with set paste mode
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <F15>=[15;5~
+endif 
+nnoremap <F15> :set paste<cr>"+p:set nopaste<cr>
+inoremap <F15> <esc>:set paste<cr>"+p:set nopaste<cr>:startinsert<cr>
+
+
+"<A-F5>
+"toggle paste
+if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
+    set <F16>=[15;3~
+endif 
+set pastetoggle=<F16>
+
 
 "********************* make ******************
 augroup makeconfig
