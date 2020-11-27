@@ -1,6 +1,7 @@
 ﻿#z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\work_space.ahk  ; Win+Z
 ^#/::Reload
 
+
 ^!n::  ; Ctrl+Alt+N
 if WinExist("Untitled - Notepad")
     WinActivate
@@ -24,11 +25,12 @@ Run, %ComSpec% /c start msedge --start-maximized --new-window "http://54.84.45.7
 Sleep, 1000
 move2Left()
 
-if WinExist("User Login"){
-    Sleep, 1000
-	Send btao
+while WinExist("User Login")
+{
+    Send btao
 	Send {Tab}
 	Send vitria{Enter}
+    Sleep, 2000
 }
 
 Run, %ComSpec% /c start msedge --start-maximized --new-window http://54.84.45.75:8080/vitria-oi/app/?min=false&min.ax=false&enableGridster=true
