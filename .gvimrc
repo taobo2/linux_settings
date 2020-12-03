@@ -4,7 +4,6 @@ language en_US.utf8
 
 if has("gui_win32")
     set guifont=Consolas:h11:cANSI "use this font to ANSI chars
-    cnoremap wsl terminal C:\Windows\Sysnative\wsl.exe
 endif
 
 highlight StatusLine guifg=#545454 guibg=#66d9ef

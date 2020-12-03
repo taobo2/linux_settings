@@ -350,6 +350,15 @@ augroup makeconfig
     autocmd BufWritePost *.js silent make | redraw! | if ! empty(getqflist()) | copen | else | cclose | endif
 augroup END
 
+"********************* tags ******************
+augroup savetags
+    autocmd!
+    if has("gui_win32")
+        autocmd BufWritePost *.js,*.java call job_start('C:\Windows\Sysnative\wsl.exe cd $(wslpath "' . expand('%:h') . '");ctags -o .tags *' )
+    else
+        autocmd BufWritePost *.js,*.java call job_start('sh -c "cd ' . expand('%:h') . '");ctags -o .tags *' )
+    endif
+augroup end
 
 "********************** Indention and tabs *****************
 set tabstop    =4 "the length of a tab char
@@ -445,7 +454,7 @@ augroup autoBrace
     autocmd FileType javascript,java,autohotkey inoremap <buffer> <expr> { CC() == "" \|\| stridx("}]);", CC()) >= 0 ? "{}<left>" : "{"
     autocmd FileType javascript,java,autohotkey inoremap <buffer> <expr> <cr> CC() == "}" ? "<cr><esc><S-O>" : "<cr>"
     autocmd FileType javascript,java,autohotkey inoremap <buffer> <expr> } CC() == "}" ? "<right>" : "}"
-augroup END
+augroup end
 
 "== separator == 
 function! GetIdx(line, char, nth)
