@@ -56,6 +56,33 @@ WinWait, SumatraPDF
 move2Left()
 return
 
+
+^#.::
+switch2Desktop(1)
+sleep 1000
+SetTitleMatchMode 2
+
+if WinExist("倍洽")
+{
+    activateAll("倍洽")
+}else
+{
+    Run, %ComSpec% /c start 倍洽
+    Sleep, 1000
+    move2Left()
+}
+
+if WinExist("Outlook")
+{
+    activateAll("Outlook")
+}else
+{
+    Run, %ComSpec% /c start outlook /profile o365
+    Sleep, 1000
+    move2Right()
+}
+return
+
 switch2Desktop(id){
     session := getSessionId()
     RegRead, cur, HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\SessionInfo\%session%\VirtualDesktops, CurrentVirtualDesktop

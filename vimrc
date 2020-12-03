@@ -328,7 +328,24 @@ set pastetoggle=<F16>
 "********************* make ******************
 augroup makeconfig
     autocmd!
-    autocmd Filetype javascript setlocal makeprg=jshint\ --verbose\ %\\\|grep\ '(E'
+    if executable('jshint')
+        autocmd Filetype javascript setlocal makeprg=jshint\ --verbose\ %\\\|grep\ '(E'
+    else
+        let file = expand('%')->substitute('\', '\\\\', 'g')
+        let dockerCmd = 'docker exec -i jovial_perlman bash -c ' 
+        let dockerCmd .= '"'
+        let dockerCmd .= 'jshint --verbose - \|'
+        let dockerCmd .= "grep '(E' " . '\|' 
+        let dockerCmd .= 'while IFS= read -r l;'
+        let dockerCmd .= 'do echo ' . "'%'" . ':${l:6};'
+        let dockerCmd .= 'done'
+        let dockerCmd .= '"'
+        if executable('cat')
+            autocmd Filetype javascript let &l:makeprg='cat "%" \|' . dockerCmd
+        else
+            autocmd Filetype javascript let &l:makeprg='type "%" \|' . dockerCmd
+        endif
+    endif
     autocmd Filetype javascript setlocal errorformat=%f:\ line\ %l\\,\ col\ %c\\,\ %m
     autocmd BufWritePost *.js silent make | redraw! | if ! empty(getqflist()) | copen | else | cclose | endif
 augroup END
