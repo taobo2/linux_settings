@@ -91,6 +91,15 @@ npm() {
     http_proxy="$_http_proxy" https_proxy="$_https_proxy" command npm "$@"
 }
 
+docker(){
+    if [ "$1" == "build" ];then
+        shift
+        command docker build --build-arg http_proxy="$_http_proxy" --build-arg https_proxy="$_https_proxy" --build-arg all_proxy="$_all_proxy" --build-arg ALL_PROXY="_all_proxy" "$@"
+    else
+        command docker "$@"
+    fi
+}
+
 alias mysql="rlwrap mysql"
 
 alias jdb="rlwrap jdb"

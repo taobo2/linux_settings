@@ -332,7 +332,7 @@ augroup makeconfig
         autocmd Filetype javascript setlocal makeprg=jshint\ --verbose\ %\\\|grep\ '(E'
     else
         let file = expand('%')->substitute('\', '\\\\', 'g')
-        let dockerCmd = 'docker exec -i jovial_perlman bash -c ' 
+        let dockerCmd = 'docker exec -i simple_tools bash -c ' 
         let dockerCmd .= '"'
         let dockerCmd .= 'jshint --verbose - \|'
         let dockerCmd .= "grep '(E' " . '\|' 
@@ -375,7 +375,7 @@ augroup END
 function FileName()
     let infoes = systemlist('svn info "' . expand('%') .'"')
 
-    if v:shell_error == 1
+    if v:shell_error == 1 || !executable('svn')
         return expand('%:t') "t means tail, which is filename
     endif
 

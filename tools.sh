@@ -1,4 +1,6 @@
 #!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
+
 apt-get update && apt-get install -y \
     vim \
     git \
@@ -18,3 +20,4 @@ npm install -g jshint
 
 locale-gen en_US.UTF-8
 
+unset DEBIAN_FRONTEND
