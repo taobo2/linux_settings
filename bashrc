@@ -40,13 +40,33 @@ export TZ=Asia/Shanghai
 sudo() {
     if [ "apt" == "$1" ] || [ "apt-get" == "$1" ];then
         command sudo http_proxy="$_http_proxy" https_proxy="$_https_proxy" "$@"
+    elif [ "_proxy" == "$1" ];then
+        shift
+        command sudo http_proxy="$_http_proxy" https_proxy="$_https_proxy" all_proxy="$_all_proxy" ALL_PROXY="_all_proxy" "$@"
     else
         command sudo "$@"
     fi
 }
 
+bash() {
+    if [ "_proxy" == "$1" ];then
+        shift
+        http_proxy="$_http_proxy" https_proxy="$_https_proxy" all_proxy="$_all_proxy" ALL_PROXY="_all_proxy" command bash "$@"
+    else
+        command bash "$@"
+    fi
+}
+
+apt() {
+    http_proxy="$_http_proxy" https_proxy="$_https_proxy" command apt "$@"
+}
+
+apt-get() {
+    http_proxy="$_http_proxy" https_proxy="$_https_proxy" command apt-get "$@"
+}
+
 git() {
-    proxyOps="clone pull push"
+    proxyOps="clone pull push fetch"
     if ! [[ "$proxyOps" =~ "$1" ]];then
         command git "$@"
         return
