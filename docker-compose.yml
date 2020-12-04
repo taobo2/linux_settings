@@ -1,0 +1,13 @@
+version : '3'
+
+services :
+    simple_tools :
+        image : simple_tools
+        build :
+            context : .
+        tty : true
+        hostname : simple_tools
+        container_name : simple_tools
+        environment :
+            - TERM=xterm-256color
+
