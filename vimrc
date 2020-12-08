@@ -20,6 +20,8 @@ set ls=2
 "directories
 set path+=./**
 
+cabbr <expr> %% expand('%:p:h')
+
 set number relativenumber
 augroup LineNumber
     autocmd!
