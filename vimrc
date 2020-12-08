@@ -29,8 +29,6 @@ augroup END
 
 set autoread
 set backup
-"./ is replaced with the path of the current file
-set tags+=./.tags;
 "allow hide modified buffer
 set hidden
 
@@ -341,14 +339,39 @@ augroup makeconfig
 augroup END
 
 "********************* tags ******************
+"./ is replaced with the path of the current file
+set tags+=./.tags;
 augroup savetags
     autocmd!
-    if has("gui_win32")
-        autocmd BufWritePost *.js,*.java call job_start('wsl cd $(wslpath "' . expand('%:h') . '");ctags -o .tags *' )
-    else
-        autocmd BufWritePost *.js,*.java call job_start('sh -c "cd ' . expand('%:h') . '");ctags -o .tags *' )
-    endif
+    autocmd BufWritePost *.js,*.java call SaveTags(expand('<afile>:p:h'))
 augroup end
+
+function! SaveTags(dir)
+    if !exists('g:SaveTagDirs') 
+        let g:SaveTagDirs=[]
+    endif
+
+    if index(g:SaveTagDirs, a:dir) >= 0
+        return
+    endif
+
+    function! RemoveTagJob(...) closure
+        let index = g:SaveTagDirs->index(a:dir)
+        if index >= 0
+            call remove(g:SaveTagDirs, index)
+        endif
+    endfunction
+
+    let options = { 'close_cb' : funcref('RemoveTagJob') }
+
+    if has("gui_win32")
+        let job = job_start('wsl cd $(wslpath "' . a:dir . '");ctags -o .tags *' , options)
+    else
+        let job = job_start('sh -c "cd ' . a:dir . '");ctags -o .tags *', options)
+    endif
+
+    call add(g:SaveTagDirs, a:dir)
+endfunction
 
 "********************** Indention and tabs *****************
 set tabstop    =4 "the length of a tab char
