@@ -329,24 +329,14 @@ set pastetoggle=<F16>
 augroup makeconfig
     autocmd!
     if executable('jshint')
-        autocmd Filetype javascript setlocal makeprg=jshint\ --verbose\ %\\\|grep\ '(E'
-    else
-        let file = expand('%')->substitute('\', '\\\\', 'g')
-        let dockerCmd = 'docker exec -i simple_tools bash -c ' 
-        let dockerCmd .= '"'
-        let dockerCmd .= 'jshint --verbose - \|'
-        let dockerCmd .= "grep '(E' " . '\|' 
-        let dockerCmd .= 'while IFS= read -r l;'
-        let dockerCmd .= 'do echo ' . "'%'" . ':${l:6};'
-        let dockerCmd .= 'done'
-        let dockerCmd .= '"'
-        if executable('cat')
-            autocmd Filetype javascript let &l:makeprg='cat "%" \|' . dockerCmd
-        else
-            autocmd Filetype javascript let &l:makeprg='type "%" \|' . dockerCmd
-        endif
+        autocmd Filetype javascript compiler jshint
+    elseif executable('wsl')
+        let cmd = 'wsl jshint --verbose "$(wslpath '. "'%'" . ')"'
+        let grepError = 'grep "(E"'
+        let prefixName = 'while IFS= read -r l;do echo ' . "'%'~~" . '${l};done'
+        autocmd Filetype javascript let &l:makeprg=cmd .'^\|'. grepError .'^\|' . prefixName
+        autocmd Filetype javascript setlocal errorformat=%f~~%.%#:\ line\ %l\\,\ col\ %c\\,\ %m
     endif
-    autocmd Filetype javascript setlocal errorformat=%f:\ line\ %l\\,\ col\ %c\\,\ %m
     autocmd BufWritePost *.js silent make | redraw! | if ! empty(getqflist()) | copen | else | cclose | endif
 augroup END
 

@@ -8,6 +8,7 @@ services :
         tty : true
         hostname : simple_tools
         container_name : simple_tools
+        restart : always
         environment :
             - TERM=xterm-256color
 

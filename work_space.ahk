@@ -93,13 +93,13 @@ switch2Desktop(id){
     {
         Loop % id-ix{
             Send ^#{Right}
-            Sleep, 100
+            Sleep, 200
         }
     }else
     {
         Loop % ix-id{
             Send ^#{Left}
-            Sleep, 100
+            Sleep, 200
         }
     }
 }

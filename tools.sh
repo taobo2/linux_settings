@@ -14,7 +14,9 @@ apt-get update && apt-get install -y \
     screen \
     universal-ctags \
     build-essential \
-    openssh-client
+    openssh-client \
+    default-jdk \
+    rlwrap
 
 npm install -g jshint
 
