@@ -344,7 +344,7 @@ augroup END
 augroup savetags
     autocmd!
     if has("gui_win32")
-        autocmd BufWritePost *.js,*.java call job_start('C:\Windows\Sysnative\wsl.exe cd $(wslpath "' . expand('%:h') . '");ctags -o .tags *' )
+        autocmd BufWritePost *.js,*.java call job_start('wsl cd $(wslpath "' . expand('%:h') . '");ctags -o .tags *' )
     else
         autocmd BufWritePost *.js,*.java call job_start('sh -c "cd ' . expand('%:h') . '");ctags -o .tags *' )
     endif
