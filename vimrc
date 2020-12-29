@@ -342,7 +342,7 @@ augroup END
 
 "********************* tags ******************
 "./ is replaced with the path of the current file
-set tags+=./.tags;
+set tags=./.tags;
 augroup savetags
     autocmd!
     autocmd BufWritePost *.js,*.java call SaveTags(expand('<afile>:p:h'))
@@ -383,7 +383,7 @@ set expandtab
 
 augroup set_indention
     autocmd!
-    autocmd Filetype javascript setlocal tabstop=2 | setlocal softtabstop=2 | setlocal shiftwidth=2
+    "autocmd Filetype javascript setlocal tabstop=2 | setlocal softtabstop=2 | setlocal shiftwidth=2
 augroup END
 
 "********************** set status bar *****************
