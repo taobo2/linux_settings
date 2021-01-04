@@ -18,4 +18,7 @@ nmap <C-F3> <F31>
 imap <C-F3> <F31>
 nmap <C-F5> <F15>
 imap <C-F5> <F15>
-set pastetoggle=<M-F5>
+"set pastetoggle=<M-F5>
+
+"paste from clipboard with set paste mode, before current column
+nnoremap <C-S-F5> :set paste<cr>"+P:set nopaste<cr>

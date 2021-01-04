@@ -309,12 +309,12 @@ nnoremap <silent> <F4> :call ToggleFold()<cr>
 nnoremap <silent> <F5> :call PopupRegHistory()<cr>
 
 "<C-F5>
-"paste from clipboard with set paste mode
+"paste from clipboard with set paste mode, after current column
 if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
     set <F15>=[15;5~
 endif 
 nnoremap <F15> :set paste<cr>"+p:set nopaste<cr>
-inoremap <F15> <esc>:set paste<cr>"+p:set nopaste<cr>:startinsert<cr>
+inoremap <expr> <F15> col(".") == 1 ? '<esc>:set paste<cr>"+P:set nopaste<cr>a' : '<esc>:set paste<cr>"+p:set nopaste<cr>a' 
 
 
 "<A-F5>
@@ -322,7 +322,6 @@ inoremap <F15> <esc>:set paste<cr>"+p:set nopaste<cr>:startinsert<cr>
 if $TERM_PROGRAM == 'Windows_Terminal' || !empty($WSLENV)
     set <F16>=[15;3~
 endif 
-set pastetoggle=<F16>
 
 
 "********************* make ******************
