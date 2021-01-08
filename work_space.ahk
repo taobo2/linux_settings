@@ -1,87 +1,137 @@
-﻿#z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\work_space.ahk  ; Win+Z
+﻿SetTitleMatchMode 2
+global SO_ID
+global SO_EDITOR_1
+global SO_EDITOR_2
+global OUTLOOK
+global BEARYCHAT
+global ADOBE
+global SUMATRA
+global VIASO
+global VIAAPP
+
+#z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\work_space.ahk  ; Win+Z
 ^#/::Reload
 
 
-^!n::  ; Ctrl+Alt+N
-if WinExist("Untitled - Notepad")
-    WinActivate
-else
-    Run Notepad
+^!n::listvars  ;
+
+;via app
+^#p::
+if not WinExist(getIdTitle(VIAAPP)){
+    VIAAPP := openWindow("runViaapp", "yoda")
+    WinMaximize, % getIdTitle(VIAAPP)
+}
+WinActivate, % getIdTitle(VIAAPP)
 return
 
-;Signal Onboarding
-^#m::
-switch2Desktop(3)
-Sleep, 1000
+;via so script
+^#v::
+if not WinExist(getIdTitle(VIASO)){
+    VIASO := openWindow("runViaso", "Ubuntu")
+    moveRight(VIASO)
+}
 
-SetTitleMatchMode 2
+if not WinExist(getIdTitle(SO_EDITOR_1)){
+    SO_EDITOR_1 := openWindow("runSobEditor", "Google Chrome")
+    moveLeft(SO_EDITOR_1)
+}
 
-if WinExist("Edge"){
-    activateAll("Signal Onboarding")
+WinActivate, % getIdTitle(VIASO)
+WinActivate, % getIdTitle(SO_EDITOR_1)
+return
+
+;Web
+^#w::
+WinGet, topweb, ID, Edge
+if topweb{
+    WinActivate, % getIdTitle(topweb)
+}else{
+    Run, %ComSpec% /c start msedge
+}
+return
+
+;Login aws dev
+^#a::
+    Run, %A_ScriptDir%\via_login.cmd
+    WinWaitActive,Vitria VIA Home,,10
+    if ErrorLevel{
+        throw "Wait login to aws dev failed"
+    }
+    WinClose
     return
+
+;Signal Onboading
+^#s::
+if not WinExist(getIdTitle(SO_ID)){
+    SO_ID := openWindow("runSob", "Google Chrome")
+    WinMaximize, % getIdTitle(SO_ID)
 }
 
-Run, %ComSpec% /c start msedge --start-maximized --new-window "http://54.84.45.75:8080/vitria-oi/app/?min=false#uri=/app/ax/space/Digital`%20Operations/axv/DO`%20-`%20Signal`%20Onboarding`%20Comp`%20V2" 
-Sleep, 1000
-move2Left()
-
-while WinExist("User Login")
-{
-    Send btao
-	Send {Tab}
-	Send vitria{Enter}
-    Sleep, 2000
+if not WinExist(getIdTitle(SO_EDITOR_1)){
+    SO_EDITOR_1 := openWindow("runSobEditor", "Google Chrome")
+    moveLeft(SO_EDITOR_1)
 }
 
-Run, %ComSpec% /c start msedge --start-maximized --new-window http://54.84.45.75:8080/vitria-oi/app/?min=false&min.ax=false&enableGridster=true
-Sleep, 1000
-move2Right()
+if not WinExist(getIdTitle(SO_EDITOR_2)){
+    SO_EDITOR_2 := openWindow("runSobEditor", "Google Chrome")
+    moveRight(SO_EDITOR_2)
+}
+
+if WinExist("A") != SO_ID {
+    WinActivate, % getIdTitle(SO_ID)
+}else{
+    WinActivate, % getIdTitle(SO_EDITOR_1)
+    WinActivate, % getIdTitle(SO_EDITOR_2)
+}
+
+return 
+
+;Messages
+^#m::
+if not WinExist(getIdTitle(OUTLOOK)){
+    OUTLOOK := openWindow("runOutlook", "Outlook")
+    moveLeft(OUTLOOK)
+}
+
+if not WinExist(getIdTitle(BEARYCHAT)){
+    BEARYCHAT := openWindow("runBearychat", "倍洽") 
+    moveRight(BEARYCHAT)
+}
+
+WinActivate, % getIdTitle(OUTLOOK)
+WinActivate, % getIdTitle(BEARYCHAT)
+
 return
 
+;Read
+^#r::
+if not WinExist(getIdTitle(ADOBE)){
+    ADOBE := openWindow("runAdobe", "Adobe Acrobat Reader")
+    moveLeft(ADOBE)
+}
+if not WinExist(getIdTitle(SUMATRA)){
+    SUMATRA := openWindow("runSumatra", "SumatraPDF")
+    moveRight(SUMATRA)
+}
+
+WinActivate, % getIdTitle(ADOBE)
+WinActivate, % getIdTitle(SUMATRA)
+
+return
+
+;next window of same app
+^#.::
+WinGetClass, ActiveClass, A
+WinSet, Bottom,, A
+WinActivate, ahk_class %ActiveClass%
+WinSet,Top,, ahk_class %ActiveClass% ;when there is only one window, it may be activated without being in the most front
+return
 
 ^#,::
-switch2Desktop(2)
-sleep 1000
-SetTitleMatchMode 2
-
-if WinExist("Adobe") or WinExist("SumatraPDF")
-    return
-
-Run, %ComSpec% /c start acrord32 
-WinWait, Adobe
-move2Right()
-
-Run, %ComSpec% /c start SumatraPDF
-WinWait, SumatraPDF
-move2Left()
+WinGetClass, ActiveClass, A
+WinActivateBottom, ahk_class %ActiveClass%
 return
 
-
-^#.::
-switch2Desktop(1)
-sleep 1000
-SetTitleMatchMode 2
-
-if WinExist("倍洽")
-{
-    activateAll("倍洽")
-}else
-{
-    Run, %ComSpec% /c start 倍洽
-    Sleep, 1000
-    move2Left()
-}
-
-if WinExist("Outlook")
-{
-    activateAll("Outlook")
-}else
-{
-    Run, %ComSpec% /c start outlook /profile o365
-    Sleep, 1000
-    move2Right()
-}
-return
 
 switch2Desktop(id){
     session := getSessionId()
@@ -124,49 +174,86 @@ getSessionId()
     return SessionId
 }
 
-move2Left()
-{
-    WinRestore,A
-    SysGet, MonitorCount, MonitorCount
-    if ( MonitorCount = 1)
-    {
-        Send #{Left}
-        Send {Esc}
-    }else
-    {
-        WinMove,A,,0,0
-        WinMaximize,A
-    }
+runSob(){
+    Run, %ComSpec% /c start chrome --start-maximized --new-window "http://54.84.45.75:8080/vitria-oi/app/?min=false&debug=true#uri=/app/ax/space/Digital`%20Operations/axv/DO`%20-`%20Signal`%20Onboarding`%20Comp`%20V2" 
 }
 
-move2Right()
-{
-    WinRestore,A
-    SysGet, MonitorCount, MonitorCount
-    if ( MonitorCount = 1)
-    {
-        Send #{Right}
-        Send {Esc}
-    }else
-    {
-        Loop, %MonitorCount%
+runSobEditor(){
+    Run, %ComSpec% /c start chrome --new-window "http://54.84.45.75:8080/vitria-oi/app/?min=false&debug=true" 
+}
+
+runOutlook(){
+    Run, %ComSpec% /c start outlook
+}
+
+runBearychat(){
+    Run, %ComSpec% /c start 倍洽
+}
+
+runAdobe(){
+    Run, %ComSpec% /c start AcroRd32
+}
+
+runSumatra(){
+    Run, %ComSpec% /c start SumatraPDF
+}
+
+runViaso(){
+    Run, %ComSpec% /c start wt -p "Ubuntu"
+}
+
+runViaapp(){
+    EnvGet, folder, yoda_apps
+    Run, %ComSpec% /c start gvim.exe -c "n dashboard_plugin/**/*java" %folder%
+}
+
+openWindow(command, title){
+    currentId := WinExist("A")
+
+    %command%()
+    
+    Loop{
+        WinWaitActive, %title%, , 20
+        if ErrorLevel
         {
-            SysGet, MonitorWorkArea, MonitorWorkArea, %A_Index%
-            if ( MonitorWorkAreaLeft  > 0 )
-            {
-                WinMove,A,, %MonitorWorkAreaLeft%, %MonitorWorkAreaTop%
-                WinMaximize,A
-                return
-            }
+            throw "Wait " . title . " failed"
         }
+        WinGet, winid, ID
+        if( currentId != winid)
+            break
+        Sleep, 100
+    }
+    return winid
+}
+
+getIdTitle(id){
+    return "ahk_id " . id
+}
+
+moveLeft(id){
+    ;SysGet, screen, MonitorWorkArea
+    ;MsgBox, % screenLeft . " " . screenRight . " " . screenTop . " " . screenBottom
+    WinRestore, ahk_id %id%
+    WinActivate, ahk_id %id%
+    WinWaitActive, ahk_id %id%
+    Send, #{Left}
+    ;WinMove, ahk_id %id%, , % screenLeft, screenTop,  (screenRight - screenLeft) / 2,  screenBottom - screenTop
+}
+
+moveRight(id){
+    ;SysGet, screen, MonitorWorkArea
+    WinRestore, ahk_id %id%
+    WinActivate, ahk_id %id%
+    WinWaitActive, ahk_id %id%
+    Send, #{Right}
+    ;WinMove, ahk_id %id%, , % screenLeft + (screenRight - screenLeft) / 2, screenTop,  (screenRight - screenLeft) / 2,  screenBottom - screenTop
+}
+
+minAllWin(){
+    id := WinExist("A")
+    WinMinimizeAll
+    while WinActive(getIdTitle(id)){
+        Sleep, 200
     }
 }
 
-activateAll(winTitle){
-    WinGet,Windows,List,%winTitle%
-    Loop,%Windows%
-    {
-        this_id := "ahk_id " . Windows%A_Index%
-        WinActivate, %this_id%
-    }
-}
