@@ -8,6 +8,7 @@ global ADOBE
 global SUMATRA
 global VIASO
 global VIAAPP
+global logs := []
 
 #z::Run, %ComSpec% /c start gvim d:\projects\linux_settings\work_space.ahk  ; Win+Z
 ^#/::Reload
@@ -77,7 +78,7 @@ if not WinExist(getIdTitle(SO_EDITOR_2)){
     moveRight(SO_EDITOR_2)
 }
 
-if WinExist("A") != SO_ID {
+if  isSoEditorsActive() || (WinExist("A") != SO_ID && isSoEditorsBelow()){
     WinActivate, % getIdTitle(SO_ID)
 }else{
     WinActivate, % getIdTitle(SO_EDITOR_1)
@@ -105,13 +106,14 @@ return
 
 ;Read
 ^#r::
-if not WinExist(getIdTitle(ADOBE)){
-    ADOBE := openWindow("runAdobe", "Adobe Acrobat Reader")
-    moveLeft(ADOBE)
-}
 if not WinExist(getIdTitle(SUMATRA)){
     SUMATRA := openWindow("runSumatra", "SumatraPDF")
     moveRight(SUMATRA)
+}
+
+if not WinExist(getIdTitle(ADOBE)){
+    ADOBE := openWindow("runAdobe", "Adobe Acrobat Reader")
+    WinMaximize, % getIdTitle(ADOBE)
 }
 
 WinActivate, % getIdTitle(ADOBE)
@@ -121,38 +123,20 @@ return
 
 ;next window of same app
 ^#.::
-WinGetClass, ActiveClass, A
+WinGet, processName, ProcessName, A
+WinGetClass, clazz, A
 WinSet, Bottom,, A
-WinActivate, ahk_class %ActiveClass%
-WinSet,Top,, ahk_class %ActiveClass% ;when there is only one window, it may be activated without being in the most front
+WinActivate, ahk_exe %processName% ahk_class %clazz%
+WinSet,Top,, ahk_exe %processName% ahk_class %clazz% ;when there is only one window, it may be activated without being in the most front
+
 return
 
 ^#,::
-WinGetClass, ActiveClass, A
-WinActivateBottom, ahk_class %ActiveClass%
+WinGet, processName, ProcessName, A
+WinGetClass, clazz, A
+WinActivateBottom, ahk_exe %processName% ahk_class %clazz%
+
 return
-
-
-switch2Desktop(id){
-    session := getSessionId()
-    RegRead, cur, HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\SessionInfo\%session%\VirtualDesktops, CurrentVirtualDesktop
-    RegRead, all, HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops, VirtualDesktopIDs
-    ix := floor(InStr(all,cur) / strlen(cur))
-
-    if (ix < id)
-    {
-        Loop % id-ix{
-            Send ^#{Right}
-            Sleep, 200
-        }
-    }else
-    {
-        Loop % ix-id{
-            Send ^#{Left}
-            Sleep, 200
-        }
-    }
-}
 
 ;
 ; This functions finds out ID of current session.
@@ -257,3 +241,33 @@ minAllWin(){
     }
 }
 
+zOrder(id){
+    WinGet, list, List
+    Loop, %list%{
+        if (id == list%A_Index%)
+        {
+            return A_Index
+        }
+    }
+    return -1
+}
+
+isSoEditorsActive(){
+    if (WinExist("A") == SO_EDITOR_1 || WinExist("A") == SO_EDITOR_2) 
+        return true
+    return false
+}
+
+isSoEditorsBelow(){
+    if (zOrder(SO_ID) < zOrder(SO_EDITOR_1) && zOrder(SO_ID) < zOrder(SO_EDITOR_2)){
+        return true 
+    }
+    return false
+}
+
+toString(arr){
+    str := ""
+    for index, value in arr
+        str .= value . ","
+    return SubStr(str, StrLen(str) - 1)
+}
