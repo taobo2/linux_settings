@@ -4,6 +4,7 @@ global SO_EDITOR_1
 global SO_EDITOR_2
 global OUTLOOK
 global BEARYCHAT
+global DINGDING
 global ADOBE
 global SUMATRA
 global VIASO
@@ -63,6 +64,10 @@ return
 
 ;Signal Onboading
 ^#s::
+if(!SO_ID && !SO_EDITOR_1 && !SO_EDITOR_2){
+    loginID := loginVia()
+}
+
 if not WinExist(getIdTitle(SO_ID)){
     SO_ID := openWindow("runSob", "Google Chrome")
     WinMaximize, % getIdTitle(SO_ID)
@@ -85,6 +90,7 @@ if  isSoEditorsActive() || (WinExist("A") != SO_ID && isSoEditorsBelow()){
     WinActivate, % getIdTitle(SO_EDITOR_2)
 }
 
+WinClose, % getIdTitle(loginID)
 return 
 
 ;Messages
@@ -94,13 +100,13 @@ if not WinExist(getIdTitle(OUTLOOK)){
     moveLeft(OUTLOOK)
 }
 
-if not WinExist(getIdTitle(BEARYCHAT)){
-    BEARYCHAT := openWindow("runBearychat", "倍洽") 
-    moveRight(BEARYCHAT)
+if not WinExist(getIdTitle(DINGDING)){
+    DINGDING := openWindow("runDingDing", "钉钉") 
+    moveRight(DINGDING)
 }
 
 WinActivate, % getIdTitle(OUTLOOK)
-WinActivate, % getIdTitle(BEARYCHAT)
+WinActivate, % getIdTitle(DINGDING)
 
 return
 
@@ -174,6 +180,10 @@ runBearychat(){
     Run, %ComSpec% /c start 倍洽
 }
 
+runDingDing(){
+    Run, %ComSpec% /c start DingtalkLauncher.exe
+}
+
 runAdobe(){
     Run, %ComSpec% /c start AcroRd32
 }
@@ -218,6 +228,7 @@ moveLeft(id){
     ;SysGet, screen, MonitorWorkArea
     ;MsgBox, % screenLeft . " " . screenRight . " " . screenTop . " " . screenBottom
     WinRestore, ahk_id %id%
+    WinMove, ahk_id %id%, 800, 600
     WinActivate, ahk_id %id%
     WinWaitActive, ahk_id %id%
     Send, #{Left}
@@ -270,4 +281,15 @@ toString(arr){
     for index, value in arr
         str .= value . ","
     return SubStr(str, StrLen(str) - 1)
+}
+
+loginVia(){
+    Run, %A_ScriptDir%\via_login.cmd
+    WinWaitActive,Vitria VIA Home,,10
+    if ErrorLevel{
+        throw "Wait login to aws dev failed"
+    }
+    id := WinExist("A")
+    WinMinimize
+    return id
 }
