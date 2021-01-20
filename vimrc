@@ -383,34 +383,86 @@ set expandtab
 augroup set_indention
     autocmd!
     "autocmd Filetype javascript setlocal tabstop=2 | setlocal softtabstop=2 | setlocal shiftwidth=2
+    autocmd OptionSet shiftwidth if v:option_type == "local" | let b:customIndent=1 | endif
+    autocmd BufWinEnter *.js call SetIndentOptions()
 augroup END
 
-"********************** set status bar *****************
-function FileName()
-    let infoes = systemlist('svn info "' . expand('%') .'"')
+let g:SetIndentPaths = [ '*' ]
+function! SetIndentOptions()
+    if get(b:, 'customIndent', 0)
+        return
+    endif
+    let needIndent = g:SetIndentPaths->copy()->filter({k,v->expand('%:p')=~glob2regpat(v)})->len() > 0
+    if needIndent == 0
+        return
+    endif
+    let indent = GetMostIndent()
+    if indent[1] >= 5
+        let &l:tabstop =indent[0]->str2nr()
+        let &l:softtabstop =indent[0]->str2nr()
+        let &l:shiftwidth =indent[0]->str2nr()
+    endif
+endfunction
 
-    if v:shell_error == 1 || !executable('svn')
-        return expand('%:t') "t means tail, which is filename
+function! GetMostIndent()
+    let shifts = {}
+    for i in range(2, line('$'))
+        let shift = abs(indent(i) - indent(i - 1))
+        if shift == 0
+            continue
+        endif
+        
+        if exists("shifts[" . shift . "]")
+            let shifts[shift] = shifts[shift] + 1
+        else
+            let shifts[shift] = 1
+        endif
+    endfor
+    
+    if empty(shifts)
+        return 0
+    endif
+    
+    let maxShifts = max(shifts)
+    return shifts->filter({k,v->v == maxShifts})->items()[0]
+endfunction
+
+"********************** set status bar *****************
+function! GetRepository(...)
+    let path = get(a:, '1', '.')
+    if executable('svn') 
+        let infoes = systemlist('svn info "' . path .'"')
+
+        if v:shell_error == 0
+            call filter(infoes, 'v:val =~ "^Relative URL"')
+            return strpart(infoes[0], stridx(infoes[0], '^'))
+        endif
     endif
 
-    return strpart(infoes[4], stridx(infoes[4], '^'))
+    if executable('git')
+        let infoes = systemlist('git -C "' . path . '" branch --show-current')
+
+        if v:shell_error == 0
+            return infoes[0]
+        endif
+    endif 
+    
+    return ""
 endfunction
 
 let g:statusFileNames = {}
+let g:statusRepository = {}
 
-function StatusLeftPart()
-    if !has_key(g:statusFileNames, expand('%:p'))
-        let g:statusFileNames[expand('%:p')] = FileName() "cache, FileName is slow
-    endif
-    
-    let name = g:statusFileNames[expand('%:p')]
-    if len(name) + 30 > winwidth(0)
-        return strpart(name, 0, winwidth(0) - 30 - 4 - len(expand('%:t'))) . '.../' . expand('%:t')
-    elseif len(name) + len(getcwd()) + 30 > winwidth(0) 
-        return name
+function! StatusLeftPart()
+    if !has_key(g:statusRepository, getcwd())
+        let g:statusRepository[getcwd()] = GetRepository()
     endif
 
-    return name . '  ' . getcwd()
+    if g:statusRepository[getcwd()] == ""
+        return expand('%:t') . '  [D]' . getcwd() 
+    else
+        return expand('%:t') . '  [D]' . getcwd() . ' [R]' . g:statusRepository[getcwd()]
+    endif
 endfunction
 
 highlight StatusLine cterm=bold ctermfg=240 ctermbg=81
