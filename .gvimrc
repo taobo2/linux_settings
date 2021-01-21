@@ -9,6 +9,7 @@ endif
 highlight StatusLine guifg=#545454 guibg=#66d9ef
 highlight StatusLineNC gui=NONE guifg=white guibg=#545454
 highlight StatusLineTermNC cterm=NONE guifg=white guibg=#545454
+highlight Conceal gui=NONE guifg=dimgrey guibg=NONE
 
 nmap <C-F2> <F21>
 nmap <M-F2> <F22>

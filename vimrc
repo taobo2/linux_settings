@@ -2,6 +2,7 @@ set nocompatible
 "set autoindent
 set ignorecase smartcase
 syntax on
+set encoding=utf-8
 set fileencoding=utf-8
 set fileencodings=ucs-bom,utf-8,chinese,cp936
 set ruler
@@ -380,11 +381,17 @@ set softtabstop=4 "affects what happens when you press the <TAB> or <BS> keys.
 set shiftwidth =4 "affects what happens when you press >>, << or ==. It also affects how automatic indentation works.
 set expandtab
 
+set conceallevel=2
+set concealcursor=nc
+
+highlight Conceal cterm=NONE ctermbg=NONE ctermfg=darkgrey
+
 augroup set_indention
     autocmd!
     "autocmd Filetype javascript setlocal tabstop=2 | setlocal softtabstop=2 | setlocal shiftwidth=2
     autocmd OptionSet shiftwidth if v:option_type == "local" | let b:customIndent=1 | endif
     autocmd BufWinEnter *.js call SetIndentOptions()
+    autocmd BufWinEnter *.js,*.java,*vimrc,*.ahk syntax match IndentLine /\(^\s\{4}\|\(^\|\S\s*\)\@<!\s\{3}\)\zs\s/ conceal cchar=┊
 augroup END
 
 let g:SetIndentPaths = [ '*' ]
@@ -411,18 +418,18 @@ function! GetMostIndent()
         if shift == 0
             continue
         endif
-        
+
         if exists("shifts[" . shift . "]")
-            let shifts[shift] = shifts[shift] + 1
+            let shifts[shift] = shifts[shift] + 1        
         else
             let shifts[shift] = 1
         endif
     endfor
-    
+
     if empty(shifts)
         return 0
     endif
-    
+
     let maxShifts = max(shifts)
     return shifts->filter({k,v->v == maxShifts})->items()[0]
 endfunction

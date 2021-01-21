@@ -54,11 +54,7 @@ return
 
 ;Login aws dev
 ^#a::
-    Run, %A_ScriptDir%\via_login.cmd
-    WinWaitActive,Vitria VIA Home,,10
-    if ErrorLevel{
-        throw "Wait login to aws dev failed"
-    }
+    loginVia()
     WinClose
     return
 
