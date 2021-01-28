@@ -60,7 +60,7 @@ return
 
 ;Signal Onboading
 ^#s::
-if(!SO_ID && !SO_EDITOR_1 && !SO_EDITOR_2){
+if(!WinIdExist(SO_ID) && !WinIdExist(SO_EDITOR_1) && !WinIdExist(SO_EDITOR_2)){
     loginID := loginVia()
 }
 
@@ -288,4 +288,8 @@ loginVia(){
     id := WinExist("A")
     WinMinimize
     return id
+}
+
+WinIdExist(id){
+    return WinExist(getIdTitle(id))
 }
