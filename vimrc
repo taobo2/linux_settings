@@ -468,7 +468,7 @@ function! StatusLeftPart()
     if g:statusRepository[getcwd()] == ""
         return expand('%:t') . '  📁' . getcwd() 
     else
-        return expand('%:t') . '  📁' . getcwd() . ' 💻' . g:statusRepository[getcwd()]
+        return expand('%:t') . '  📁' . getcwd() . ' ⛅' . g:statusRepository[getcwd()]
     endif
 endfunction
 
