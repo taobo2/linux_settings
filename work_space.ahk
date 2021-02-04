@@ -194,7 +194,7 @@ runViaso(){
 
 runViaapp(){
     EnvGet, folder, yoda_apps
-    Run, %ComSpec% /c start gvim.exe -c "n dashboard_plugin/**/*java" %folder%
+    Run, %ComSpec% /c start gvim.exe -S "d:\projects\linux_settings\platform.vim"
 }
 
 openWindow(command, title){

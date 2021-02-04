@@ -28,6 +28,8 @@ augroup LineNumber
     autocmd!
     autocmd WinLeave * setlocal number norelativenumber
     autocmd WinEnter * setlocal number relativenumber
+    autocmd InsertEnter * setlocal number norelativenumber
+    autocmd InsertLeave * setlocal number relativenumber
 augroup END
 
 set autoread
@@ -342,7 +344,7 @@ augroup END
 
 "********************* tags ******************
 "./ is replaced with the path of the current file
-set tags=./.tags;
+set tags=./.tags
 augroup savetags
     autocmd!
     autocmd BufWritePost *.js,*.java call SaveTags(expand('<afile>:p:h'))
