@@ -171,6 +171,50 @@ augroup END
 "    endif
 "endfunction
 "
+""""""""""""""""""""""""Popup tips"""""""""""""""""""""
+"F1
+"
+
+inoremap <F1> <C-O>:call ToggleJump()<CR>
+nnoremap <F1> :call ToggleJump()<CR>
+hi! Tip cterm=NONE ctermbg=NONE
+function! ToggleJump()
+    if get(t:, 'tip', 0)
+        call PopClose()
+        return
+    endif
+    let height = &lines * 4 / 10
+    redir => jumplines
+    silent jumps
+    redir END
+    let preJump = 0
+    for l in jumplines->split('\n')[1:]
+        if l[0] == '>'
+            break
+        endif
+        let preJump = l
+    endfor
+    let firstline = preJump->matchstr('\d\+\s\+\zs\d\+')->str2nr() - height / 2
+    let option = #{ 
+                \line : screenpos(win_getid(), line('.'), col('.')).row > &lines/2 ? 1 : &lines/2,
+                \col : &columns - 100,
+                \maxwidth : 100,
+                \maxheight : height,
+                \firstline : firstline > 0 ? firstline : 1
+                \}
+    let t:tip = popup_create(1, option)
+    call win_execute(t:tip, "call matchadd('Tip', 'popup')")
+    call win_execute(t:tip, "set number")
+endfunction
+
+function! PopClose()
+    call popup_close(get(t:, 'tip', 0))
+    let t:tip = 0
+endfunction
+
+augroup PopTip
+    autocmd!
+augroup END 
 
 """"""""""""""""""""""""""""Bind Function Keys""""""""""
 "F2
